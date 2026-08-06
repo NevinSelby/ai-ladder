@@ -53,3 +53,20 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+
+  # ── Content freshness ────────────────────────────────────────────────────
+  # Pulls vendor release feeds nightly so the curriculum can notice when a
+  # product is renamed or a control is superseded. Deliberately model-free: it
+  # is cheap, idempotent, and needs no AI credentials, which is why it can run
+  # before the generation stages are configured.
+  - type: cron
+    name: ai-ladder-ingest
+    runtime: node
+    schedule: "17 3 * * *"
+    buildCommand: npm ci
+    startCommand: node pipeline/ingest.mjs
+    envVars:
+      # Direct Postgres connection string for the Supabase project. Set in the
+      # dashboard, never in the repository.
+      - key: DATABASE_URL
+        sync: false
