@@ -259,6 +259,8 @@ export default function DrillSession() {
     refresh();
   }, [results, items.length, refresh]);
 
+
+
   const answered = results.length;
 
   const { dialog: exitDialog, requestExit } = useConfirmExit({
@@ -272,6 +274,8 @@ export default function DrillSession() {
     confirmLabel: answered > 0 ? 'Leave and discard' : 'Leave',
     cancelLabel: 'Keep going',
   });
+
+
 
   const advance = useCallback(async () => {
     if (index + 1 < items.length) {
@@ -291,32 +295,6 @@ export default function DrillSession() {
     setStage('summary');
   }, [index, items.length, bankSession]);
 
-  if (stage === 'loading') {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={theme.accent} />
-      </View>
-    );
-  }
-
-  if (stage === 'summary') {
-    return (
-      <SessionSummary
-        results={results}
-        perfectBonus={outcome.perfectBonus}
-        leveledUp={outcome.leveledUp}
-        dailyBonus={outcome.dailyBonus}
-        milestone={outcome.milestone}
-        streakDays={profile.streakDays}
-        onDone={() => router.back()}
-      />
-    );
-  }
-
-  if (!item || !payload) return null;
-
-  const showingFeedback = stage === 'feedback';
-
   /**
    * Keyboard play, web only.
    *
@@ -327,6 +305,7 @@ export default function DrillSession() {
   const shortcuts = useMemo(() => {
     const map: Record<string, (() => void) | undefined> = {};
     if (stage !== 'question' && stage !== 'feedback') return map;
+    const showingFeedback = stage === 'feedback';
 
     map.Escape = requestExit;
     map.ArrowLeft = () =>
@@ -365,9 +344,37 @@ export default function DrillSession() {
       }
     }
     return map;
-  }, [stage, showingFeedback, viewIndex, index, payload, response, advance, submit, requestExit]);
+  }, [stage, viewIndex, index, payload, response, advance, submit, requestExit]);
 
   useKeyboardShortcuts(shortcuts, stage === 'question' || stage === 'feedback');
+
+  if (stage === 'loading') {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={theme.accent} />
+      </View>
+    );
+  }
+
+  if (stage === 'summary') {
+    return (
+      <SessionSummary
+        results={results}
+        perfectBonus={outcome.perfectBonus}
+        leveledUp={outcome.leveledUp}
+        dailyBonus={outcome.dailyBonus}
+        milestone={outcome.milestone}
+        streakDays={profile.streakDays}
+        onDone={() => router.back()}
+      />
+    );
+  }
+
+  if (!item || !payload) return null;
+
+  const showingFeedback = stage === 'feedback';
+
+
 
   // Review mode replays an already-answered question. Everything below renders
   // from `shown*` so the live question and a reviewed one share one layout;

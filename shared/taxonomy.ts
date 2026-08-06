@@ -123,7 +123,7 @@ export const BRANCH_META: Record<Branch, { label: string; blurb: string; meter: 
   },
   azure_ai_platform: {
     label: 'Azure AI Platform',
-    blurb: 'AI Foundry, Azure OpenAI, AI Search, content safety, managed identity for agents.',
+    blurb: 'Microsoft Foundry, Azure OpenAI, AI Search, content safety, identity for agents.',
     meter: 'platform',
   },
 };
@@ -584,8 +584,8 @@ export const TAXONOMY: TaxonomyNode[] = [
     { cloud: 'azure' }),
 
   // ── Azure AI Platform ────────────────────────────────────────────────────
-  n('az.ai_foundry', 'azure_ai_platform', 'AI Foundry',
-    'Projects, hubs, model catalog and the deployment story for enterprise AI.',
+  n('az.ai_foundry', 'azure_ai_platform', 'Microsoft Foundry',
+    'Projects, connections, model catalog and the deployment story for enterprise AI. Renamed from Azure AI Foundry.',
     { cloud: 'azure' }),
   n('az.openai', 'azure_ai_platform', 'Azure OpenAI',
     'Deployments, quota and TPM, provisioned throughput units and regional availability.',

@@ -11,6 +11,8 @@ import { DRILL_GCP_CORE } from './drill-gcp-core';
 import { DRILL_AI_DEPTH } from './drill-ai-depth';
 import { DRILL_SECID } from './drill-secid';
 import { DRILL_AWS } from './drill-aws';
+import { DRILL_AZURE } from './drill-azure';
+import { DRILL_XCLOUD } from './xcloud';
 import { DRILL_RUNTIME } from './drill-runtime';
 import { DECOMPOSE_SEED } from './decompose';
 import { FLAW_SEED } from './flaw';
@@ -40,6 +42,8 @@ export const SEED_ITEMS: ContentItem[] = [
   ...DRILL_AI_DEPTH,
   ...DRILL_SECID,
   ...DRILL_AWS,
+  ...DRILL_AZURE,
+  ...DRILL_XCLOUD,
   ...ARENA_SEED,
   ...ARENA_EXPANSION,
   ...ARENA_DEEP,

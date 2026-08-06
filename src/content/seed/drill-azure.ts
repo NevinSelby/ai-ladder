@@ -2190,7 +2190,7 @@ export const DRILL_AZURE: DrillItem[] = [
     id: 'az2.search.replicas_partitions',
     mode: 'drill',
     nodeIds: ['az.ai_search', 'scale.capacity'],
-    difficulty: 'edge',
+    difficulty: 'core',
     explanation:
       'Replicas add query throughput and availability; partitions add index storage and indexing throughput. Scaling the wrong dimension is a common and expensive mistake, because a service that is slow under query load does not get faster by adding storage capacity.',
     citations: citeAz('azFoundry'),
