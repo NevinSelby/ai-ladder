@@ -20,6 +20,7 @@ import { Bar, Button, Card, Chip, Divider, Eyebrow, Row, Screen, Spacer, Stack, 
 import { ACCOUNTS_BY_ID, healthBand } from '@/content/accounts';
 import { setDailyGoal } from '@/data/profile';
 import { dailyPuzzle } from '@/data/puzzle';
+import { Aurora, Rule, SectionLabel, Stagger } from '@/components/surface';
 import { PulseDot } from '@/components/ambient';
 import { Tooltip } from '@/components/tooltip';
 import { refreshQuests, type QuestStatus } from '@/data/quests';
@@ -29,7 +30,14 @@ import { useProfile, useRefreshAppState, useSessionStatus } from '@/hooks/use-ap
 import { MAX_CONTENT_WIDTH,
   useLayout, METER_META, meterColor, radius, space, useScheme, useTheme } from '@/theme';
 import { MODE_META, type Mode } from '@shared/content';
-import { DAILY_GOALS, DAILY_GOAL_KEYS, drillMinutes, levelProgress, type DailyGoal } from '@shared/progression';
+import {
+  DAILY_GOALS,
+  DAILY_GOAL_KEYS,
+  LEVELS,
+  drillMinutes,
+  levelProgress,
+  type DailyGoal,
+} from '@shared/progression';
 import { useMotion } from '@/theme/motion-prefs';
 
 /** Modes not yet wired up. Shown locked rather than hidden, so the app is honest
@@ -94,9 +102,8 @@ export default function TodayScreen() {
       <Spacer size={space.sm} />
 
       <Row justify="space-between" align="flex-start" style={{ zIndex: 20 }}>
-        <View style={{ gap: 2 }}>
+        <View style={{ gap: 4, flex: 1 }}>
           <Wordmark />
-          <Text variant="display">{greeting()}</Text>
         </View>
         <Row gap={space.sm} align="center">
           <Tooltip
@@ -123,6 +130,29 @@ export default function TodayScreen() {
         </Row>
       </Row>
 
+      <Spacer size={space.lg} />
+
+      {/* ── Hero ──
+          One oversized line, the rung beneath it as a mono figure. The point
+          is that the screen has an obvious loudest thing, which a stack of
+          equal cards never does. */}
+      <Stagger index={0}>
+        <View style={{ gap: space.sm }}>
+          <Text variant="hero">{greeting()}</Text>
+          <Row gap={space.md} align="center">
+            <Text variant="eyebrow" tone="textFaint">
+              RUNG {progress.level.index + 1} / {LEVELS.length}
+            </Text>
+            <View style={{ flex: 1 }}>
+              <Rule width={inner * 0.5} />
+            </View>
+            <Text variant="eyebrow" tone="accent">
+              {progress.level.title.toUpperCase()}
+            </Text>
+          </Row>
+        </View>
+      </Stagger>
+
       <Spacer size={space.xl} />
 
       {status.summary.total === 0 ? (
@@ -132,27 +162,38 @@ export default function TodayScreen() {
         </>
       ) : null}
 
-      {/* ── The one thing to do today ── */}
-      <Card accent={status.doneToday ? theme.positive : theme.accent}>
-        <Stack gap={space.md}>
-          <Row justify="space-between" align="center">
-            <Row gap={space.sm} align="center">
-              {!status.doneToday ? <PulseDot color={theme.accent} size={7} /> : null}
-              <Eyebrow tone={status.doneToday ? 'positive' : 'accent'}>
-                {status.doneToday ? 'Session complete' : 'Today’s session'}
-              </Eyebrow>
+      {/* ── The one thing to do today ──
+          Given hero treatment on purpose: a lit surface, oversized type and the
+          only filled button on the screen. Everything else here is secondary,
+          and it should look it. */}
+      <Stagger index={1}>
+        <Card accent={status.doneToday ? theme.positive : theme.accent} level={2}>
+          <Aurora
+            width={inner}
+            height={300}
+            from={status.doneToday ? theme.positive : theme.accent}
+            to={theme.accentAlt}
+            opacity={status.doneToday ? 0.07 : 0.12}
+          />
+          <Stack gap={space.md}>
+            <Row justify="space-between" align="center">
+              <Row gap={space.sm} align="center">
+                {!status.doneToday ? <PulseDot color={theme.accent} size={7} /> : null}
+                <Eyebrow tone={status.doneToday ? 'positive' : 'accent'}>
+                  {status.doneToday ? 'Session complete' : 'Today’s session'}
+                </Eyebrow>
+              </Row>
+              <Chip
+                label={`${drillMinutes(profile.dailyGoal)} min`}
+                color={theme.textFaint}
+              />
             </Row>
-            <Chip
-              label={`${drillMinutes(profile.dailyGoal)} min`}
-              color={theme.textFaint}
-            />
-          </Row>
 
-          <Text variant="heading">
-            {status.doneToday
-              ? 'Done. Come back tomorrow to keep the streak.'
-              : MODE_META.drill.tagline}
-          </Text>
+            <Text variant="title">
+              {status.doneToday
+                ? 'Done. Come back tomorrow to keep the streak.'
+                : MODE_META.drill.tagline}
+            </Text>
 
           {status.dueNodes > 0 ? (
             <Text variant="small" tone="textMuted">
@@ -179,15 +220,17 @@ export default function TodayScreen() {
                 size={18}
               />
             }
-          />
-        </Stack>
-      </Card>
+            />
+          </Stack>
+        </Card>
+      </Stagger>
 
-      <Spacer size={space.lg} />
+      <Spacer size={space.xxl} />
 
       {/* ── Daily puzzle ── */}
       {puzzle ? (
         <>
+          <SectionLabel label="Today's puzzle" width={inner} />
           <Spacer size={space.md} />
           <Pressable onPress={() => router.push({ pathname: '/session/flaw', params: { puzzle: '1' } })}>
             <Card accent={puzzle.solved ? theme.positive : theme.warning}>
@@ -220,6 +263,10 @@ export default function TodayScreen() {
           </Pressable>
         </>
       ) : null}
+
+      <Spacer size={space.xxl} />
+      <SectionLabel label="Daily quests" width={inner} />
+      <Spacer size={space.md} />
 
       {/* ── Daily quests ── */}
       <QuestCard />
@@ -474,10 +521,12 @@ function QuestCard() {
         <Row justify="space-between" align="center">
           <Row gap={space.sm} align="center">
             <IconQuest color={theme.accent} size={17} />
-            <Eyebrow>Daily quests</Eyebrow>
+            <Text variant="smallStrong">
+              {doneCount} of {quests.length} done
+            </Text>
           </Row>
           <Text variant="caption" tone="textFaint">
-            {doneCount}/{quests.length} · fresh tomorrow
+            fresh tomorrow
           </Text>
         </Row>
         {quests.map((quest) => {

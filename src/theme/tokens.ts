@@ -90,71 +90,84 @@ export function sequentialStep(fraction: number, scheme: SchemeName): string {
   return ramp[index];
 }
 
+/**
+ * Light: warm paper, near-black ink, one electric accent.
+ *
+ * The old accent was a safe corporate blue, which is the colour a product
+ * lands on when nobody chose. Electric violet is chosen: it collides with none
+ * of the semantic colours (green means passed, red means failed, amber means
+ * careful), it reads technical rather than playful, and it survives being
+ * printed on both paper and ink backgrounds.
+ */
 const light = {
-  scheme: 'light' as string,
-  /** Warm paper. Pure white at this reading load is glare. */
-  bg: '#FBFAF6',
-  /** Cards lifted off the page. */
+  scheme: 'light' as 'light' | 'dark',
+  /** Warm off-white. Pure white is a screenshot, not a reading surface. */
+  bg: '#F7F6F2',
   surface: '#FFFFFF',
-  /** Rows and inputs sitting on a card. */
-  elevated: '#F4F3EE',
-  elevatedActive: '#EAE9E2',
-  /** Hairlines only: structure comes from elevation, not from boxes. */
-  border: '#E6E4DB',
-  borderStrong: '#D2CFC3',
-  /** Near-ink, not black. */
-  text: '#22262B',
-  textMuted: '#5D646C',
-  textFaint: '#8C939B',
-  /** Ink blue. Desaturated on purpose. This is on screen for hours. */
-  accent: '#2F5E8F',
+  elevated: '#F1EFE9',
+  elevatedActive: '#E7E4DC',
+  border: '#E5E2D9',
+  borderStrong: '#CFCBBF',
+  /** Near-ink. Slightly warm so it sits on paper rather than floating. */
+  text: '#16161A',
+  textMuted: '#5A5A63',
+  textFaint: '#8B8B95',
+  accent: '#5B4BFF',
   accentText: '#FFFFFF',
-  accentSoft: '#E8EFF7',
-  positive: '#1B7355',
-  positiveSoft: '#E4F2EC',
-  negative: '#A83232',
-  negativeSoft: '#FAEAE8',
-  warning: '#8A6212',
-  warningSoft: '#F8F0DF',
-  /** Flame gradient: deep base, hot mid, white-hot core. Fire only. */
+  accentSoft: '#ECE9FF',
+  /** The second half of every hero gradient. */
+  accentAlt: '#00C2C7',
+  positive: '#1C7A54',
+  positiveSoft: '#E2F3EB',
+  negative: '#B0242B',
+  negativeSoft: '#FBE9E9',
+  warning: '#8A5A0B',
+  warningSoft: '#F9EFDC',
   flameDeep: '#D2361B',
   flameMid: '#F58A1F',
   flameCore: '#FFC93F',
-  scrim: 'rgba(34,38,43,0.32)',
-  /** Soft elevation. Warm-tinted so shadows do not read grey on paper. */
-  shadow: 'rgba(58,52,38,0.10)',
-  shadowStrong: 'rgba(58,52,38,0.16)',
+  scrim: 'rgba(18,18,22,0.36)',
+  shadow: 'rgba(38,34,28,0.10)',
+  shadowStrong: 'rgba(38,34,28,0.18)',
 };
 
 export type Palette = typeof light;
 
 /** Night reading. Soft slate rather than the usual near-black. */
+/**
+ * Dark: not an inversion.
+ *
+ * Surfaces are lifted with tonal steps rather than pure black, the accent is
+ * raised in lightness so it keeps its contrast ratio, and the text tops out
+ * below pure white because #FFF on near-black vibrates.
+ */
 const dark: Palette = {
   scheme: 'dark',
-  bg: '#16181C',
-  surface: '#1D2025',
-  elevated: '#252930',
-  elevatedActive: '#2E333B',
-  border: '#31363E',
-  borderStrong: '#434A54',
-  text: '#E6E8EB',
-  textMuted: '#A0A8B2',
-  textFaint: '#767E88',
-  accent: '#7BAAE8',
-  accentText: '#12151A',
-  accentSoft: '#1F2A38',
-  positive: '#5FCBAA',
-  positiveSoft: '#182A26',
-  negative: '#EE8A82',
-  negativeSoft: '#2E1F1F',
-  warning: '#E0A93C',
-  warningSoft: '#2B2416',
+  bg: '#0B0C0F',
+  surface: '#141519',
+  elevated: '#1C1E24',
+  elevatedActive: '#25272F',
+  border: '#282A31',
+  borderStrong: '#3A3D46',
+  text: '#E9E9EE',
+  textMuted: '#A0A1AC',
+  textFaint: '#71737E',
+  accent: '#8B7BFF',
+  accentText: '#0B0C0F',
+  accentSoft: '#1E1B36',
+  accentAlt: '#3DDCDF',
+  positive: '#4FC894',
+  positiveSoft: '#12261F',
+  negative: '#F08A84',
+  negativeSoft: '#2A1718',
+  warning: '#E3A94A',
+  warningSoft: '#2A2113',
   flameDeep: '#E04A22',
   flameMid: '#FF9A2E',
   flameCore: '#FFD457',
-  scrim: 'rgba(0,0,0,0.55)',
-  shadow: 'rgba(0,0,0,0.28)',
-  shadowStrong: 'rgba(0,0,0,0.42)',
+  scrim: 'rgba(0,0,0,0.62)',
+  shadow: 'rgba(0,0,0,0.35)',
+  shadowStrong: 'rgba(0,0,0,0.5)',
 };
 
 export const PALETTES = { light, dark };
@@ -201,16 +214,26 @@ export const elevation = (palette: Palette, level: 0 | 1 | 2 = 1) => {
   });
 };
 
-export const fonts = Platform.select({
-  ios: { sans: 'system-ui', rounded: 'ui-rounded', mono: 'ui-monospace' },
-  android: { sans: 'normal', rounded: 'normal', mono: 'monospace' },
-  default: { sans: 'normal', rounded: 'normal', mono: 'monospace' },
-  web: {
-    sans: 'var(--font-display)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-})!;
+/**
+ * Three faces, each with a job.
+ *
+ * Space Grotesk carries every heading: geometric, slightly odd, and unmistakably
+ * chosen rather than defaulted to. Inter does the reading work, because at
+ * fifteen pixels on a phone nothing beats it. JetBrains Mono handles anything
+ * that is a number, a label or a piece of machine output, which is most of the
+ * chrome in a tool for engineers.
+ *
+ * System fonts were the tell that nobody had made a decision here.
+ */
+export const fonts = {
+  display: 'SpaceGrotesk_700Bold',
+  displayMedium: 'SpaceGrotesk_500Medium',
+  sans: 'Inter_400Regular',
+  sansMedium: 'Inter_500Medium',
+  sansSemi: 'Inter_600SemiBold',
+  mono: 'JetBrainsMono_500Medium',
+  monoBold: 'JetBrainsMono_700Bold',
+} as const;
 
 /**
  * Type scale.
@@ -222,26 +245,89 @@ export const fonts = Platform.select({
  * Mono variants are reserved for numbers, meter labels and status chips, 
  * never for prose.
  */
+/**
+ * The scale.
+ *
+ * Editorial contrast: the display size is deliberately far from body size, so
+ * a screen has an obvious loudest thing. Headings run tight (negative tracking,
+ * leading below 1.1 at the top end) because Space Grotesk is built for it and
+ * because tight display type is what separates designed from generated.
+ */
 export const type = {
-  display: { fontSize: 30, lineHeight: 38, fontWeight: '700' as const, letterSpacing: -0.5 },
-  title: { fontSize: 23, lineHeight: 31, fontWeight: '700' as const, letterSpacing: -0.3 },
-  heading: { fontSize: 19, lineHeight: 28, fontWeight: '600' as const, letterSpacing: -0.15 },
-  /** Question stems. Slightly larger and looser than body. */
-  question: { fontSize: 18.5, lineHeight: 29, fontWeight: '500' as const, letterSpacing: -0.1 },
-  body: { fontSize: 16.5, lineHeight: 27, fontWeight: '400' as const },
-  bodyStrong: { fontSize: 16.5, lineHeight: 27, fontWeight: '600' as const },
-  small: { fontSize: 15, lineHeight: 24, fontWeight: '400' as const },
-  smallStrong: { fontSize: 15, lineHeight: 24, fontWeight: '600' as const },
-  caption: { fontSize: 13, lineHeight: 19, fontWeight: '500' as const },
-  eyebrow: {
-    fontSize: 11,
-    lineHeight: 15,
+  /** Screen titles. Big enough to be the only thing you read first. */
+  hero: {
+    fontSize: 44,
+    lineHeight: 46,
     fontWeight: '700' as const,
-    letterSpacing: 1.2,
+    letterSpacing: -1.6,
+    fontFamily: fonts.display,
+  },
+  display: {
+    fontSize: 32,
+    lineHeight: 36,
+    fontWeight: '700' as const,
+    letterSpacing: -1,
+    fontFamily: fonts.display,
+  },
+  title: {
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: '700' as const,
+    letterSpacing: -0.6,
+    fontFamily: fonts.display,
+  },
+  heading: {
+    fontSize: 19,
+    lineHeight: 26,
+    fontWeight: '500' as const,
+    letterSpacing: -0.3,
+    fontFamily: fonts.displayMedium,
+  },
+  /** Question stems. Sized to be read once, carefully. */
+  question: {
+    fontSize: 19,
+    lineHeight: 29,
+    fontWeight: '400' as const,
+    letterSpacing: -0.2,
+    fontFamily: fonts.sansMedium,
+  },
+  body: { fontSize: 16, lineHeight: 26, fontWeight: '400' as const, fontFamily: fonts.sans },
+  bodyStrong: {
+    fontSize: 16,
+    lineHeight: 26,
+    fontWeight: '600' as const,
+    fontFamily: fonts.sansSemi,
+  },
+  small: { fontSize: 14.5, lineHeight: 23, fontWeight: '400' as const, fontFamily: fonts.sans },
+  smallStrong: {
+    fontSize: 14.5,
+    lineHeight: 23,
+    fontWeight: '600' as const,
+    fontFamily: fonts.sansSemi,
+  },
+  caption: { fontSize: 12.5, lineHeight: 18, fontWeight: '400' as const, fontFamily: fonts.sans },
+  /** Section labels. Mono, tracked wide, always uppercase. */
+  eyebrow: {
+    fontSize: 10.5,
+    lineHeight: 14,
+    fontWeight: '500' as const,
+    letterSpacing: 1.6,
     fontFamily: fonts.mono,
   },
-  numeric: { fontSize: 27, lineHeight: 32, fontWeight: '700' as const, fontFamily: fonts.mono },
-  numericSm: { fontSize: 15, lineHeight: 21, fontWeight: '600' as const, fontFamily: fonts.mono },
+  /** Figures. Tabular by nature, so columns and timers never jitter. */
+  numeric: {
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '700' as const,
+    letterSpacing: -1,
+    fontFamily: fonts.monoBold,
+  },
+  numericSm: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500' as const,
+    fontFamily: fonts.mono,
+  },
 } as const;
 
 /** Motion. Short and eased, animation should be felt, not watched. */

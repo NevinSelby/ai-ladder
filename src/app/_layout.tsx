@@ -17,6 +17,20 @@ import { bootstrapLocalData, DatabaseProvider, db, useDatabase } from '@/db';
 import { setHapticsFlag } from '@/lib/haptics';
 import { currentSession, initAuthPrefs } from '@/lib/supabase';
 import { syncNow } from '@/data/sync';
+import {
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_700Bold,
+} from '@expo-google-fonts/space-grotesk';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
+import {
+  JetBrainsMono_500Medium,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
+import { useFonts } from 'expo-font';
 import { useRefreshAppState } from '@/hooks/use-app-state';
 import { space, useTheme } from '@/theme';
 import { MotionProvider } from '@/theme/motion-prefs';
@@ -30,6 +44,24 @@ const queryClient = new QueryClient({
 
 function Boot({ children }: { children: React.ReactNode }) {
   const refresh = useRefreshAppState();
+
+  /**
+   * Type is loaded before anything renders.
+   *
+   * Every heading is Space Grotesk and every figure is JetBrains Mono, so a
+   * frame drawn before they arrive is a frame in the wrong typeface that then
+   * visibly reflows. Waiting costs a moment; swapping costs the impression
+   * that the app is held together loosely.
+   */
+  const [fontsReady] = useFonts({
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
+  });
   const theme = useTheme();
   const { ready, error } = useDatabase();
   const [seeded, setSeeded] = useState(false);
@@ -110,7 +142,7 @@ function Boot({ children }: { children: React.ReactNode }) {
     return <BootError title="AI Ladder could not start" error={failure} />;
   }
 
-  if (!seeded) {
+  if (!seeded || !fontsReady) {
     return (
       <LoadingTips />
     );
