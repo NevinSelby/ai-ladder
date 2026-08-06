@@ -11,6 +11,7 @@ import {
 } from '@/db/schema';
 import { supabase } from '@/lib/supabase';
 
+import { streakSummary } from './learning';
 import { readProfile } from './profile';
 
 /**
@@ -247,6 +248,93 @@ export async function syncNow(db: Database): Promise<SyncResult> {
       await db
         .update(profileState)
         .set({ remoteUserId: userId })
+        .where(eq(profileState.id, 1))
+        .run();
+    }
+
+    // ── Self-heal derived state ────────────────────────────────────────────
+    /**
+     * Meters and the day calendar are summaries of the attempt log, and a bad
+     * write can leave them behind the log they summarize. That is not
+     * hypothetical: an earlier push-before-pull bug zeroed the server profile
+     * while every attempt survived, so the numbers said zero and the evidence
+     * said otherwise.
+     *
+     * Rebuild both from attempts and keep whichever is higher. Attempts are
+     * append-only and per-answer, so they are the most trustworthy record in
+     * the system, and this cannot lower anything.
+     */
+    const meterSums = await db
+      .select({ meter: attempts.meter, xp: sql<number>`sum(${attempts.xp})` })
+      .from(attempts)
+      .groupBy(attempts.meter);
+
+    if (meterSums.length > 0) {
+      const earned: Record<string, number> = {};
+      for (const row of meterSums) earned[row.meter] = Number(row.xp ?? 0);
+      const current = await readProfile(db);
+      await db
+        .update(profileState)
+        .set({
+          depth: Math.max(current.meters.depth, earned.depth ?? 0),
+          platform: Math.max(current.meters.platform, earned.platform ?? 0),
+          aiCraft: Math.max(current.meters.aiCraft, earned.aiCraft ?? 0),
+          client: Math.max(current.meters.client, earned.client ?? 0),
+          scope: Math.max(current.meters.scope, earned.scope ?? 0),
+          syncedAt: null,
+        })
+        .where(eq(profileState.id, 1))
+        .run();
+    }
+
+    // Rebuild any missing calendar days. `localtime` matters: the streak
+    // follows the practitioner's day, not UTC.
+    const derivedDays = await db
+      .select({
+        day: sql<string>`date(${attempts.createdAt}, 'localtime')`,
+        xp: sql<number>`sum(${attempts.xp})`,
+        items: sql<number>`count(*)`,
+      })
+      .from(attempts)
+      .groupBy(sql`date(${attempts.createdAt}, 'localtime')`);
+
+    for (const row of derivedDays) {
+      if (!row.day) continue;
+      await db
+        .insert(streakDays)
+        .values({
+          day: row.day,
+          // Attempts carry no session id, so this is an estimate against a
+          // five-item session. It only ever fills a gap, never overwrites.
+          sessions: Math.max(1, Math.round(Number(row.items) / 5)),
+          xp: Number(row.xp ?? 0),
+          itemsAnswered: Number(row.items ?? 0),
+          lessonsRead: 0,
+          syncedAt: null,
+        })
+        .onConflictDoUpdate({
+          target: streakDays.day,
+          set: {
+            xp: sql`max(${streakDays.xp}, ${Number(row.xp ?? 0)})`,
+            itemsAnswered: sql`max(${streakDays.itemsAnswered}, ${Number(row.items ?? 0)})`,
+          },
+        })
+        .run();
+    }
+
+    // The streak counter is itself derived from those days, so rebuild it from
+    // the repaired calendar rather than trusting a number that may have been
+    // zeroed alongside the meters.
+    const rebuilt = await streakSummary(db);
+    const afterHeal = await readProfile(db);
+    if (rebuilt.current > afterHeal.streakDays || rebuilt.longest > afterHeal.longestStreak) {
+      await db
+        .update(profileState)
+        .set({
+          streakDays: Math.max(afterHeal.streakDays, rebuilt.current),
+          longestStreak: Math.max(afterHeal.longestStreak, rebuilt.longest),
+          syncedAt: null,
+        })
         .where(eq(profileState.id, 1))
         .run();
     }
