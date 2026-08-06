@@ -10,6 +10,8 @@ import { Breathe } from '@/components/ambient';
 import { Bar, Card, Chip, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { lessonStats, readLessons, type LessonWithState } from '@/data/learning';
 import { recentReleaseNotes } from '@/data/changes';
+import { CLOUD_META } from '@/data/profile';
+import { useProfile } from '@/hooks/use-app-state';
 import { db } from '@/db';
 import { useRefreshAppState } from '@/hooks/use-app-state';
 import { meterColor, motion, radius, space, useScheme, useTheme } from '@/theme';
@@ -28,6 +30,7 @@ export default function LearnScreen() {
   const theme = useTheme();
   const scheme = useScheme();
   const refresh = useRefreshAppState();
+  const { data: profile } = useProfile();
   const [filter, setFilter] = useState<string | null>(null);
 
   const { data: lessons = [] } = useQuery({
@@ -58,10 +61,12 @@ export default function LearnScreen() {
     );
   }, [lessons, filter]);
 
-  const { data: changes = { notes: [], total: 0 } } = useQuery({
-    queryKey: ['app-state', 'release-notes'],
-    queryFn: () => recentReleaseNotes(),
-    placeholderData: { notes: [], total: 0 },
+  const { data: changes = { notes: [], total: 0, days: 7 } } = useQuery({
+    // The cloud is part of the key: switching it must refetch, not reuse the
+    // previous cloud's notes.
+    queryKey: ['app-state', 'release-notes', profile.cloudPreference],
+    queryFn: () => recentReleaseNotes(profile.cloudPreference),
+    placeholderData: { notes: [], total: 0, days: 7 },
     // Vendor feeds move daily, not by the minute.
     staleTime: 60 * 60 * 1000,
   });
@@ -104,13 +109,16 @@ export default function LearnScreen() {
       {/* ── What changed ── */}
       {changes.notes.length > 0 ? (
         <>
-          <Animated.View entering={FadeInDown.duration(motion.slow).delay(40)}>
+          {/* Deliberately not animated in. This card mounts after its query
+              resolves, and a Reanimated entrance on a late-mounting element
+              leaves it at opacity zero on web. */}
+          <View>
             <Card accent={theme.positive}>
               <Stack gap={space.md}>
                 <Row justify="space-between" align="baseline">
                   <Eyebrow tone="positive">Changed this week</Eyebrow>
                   <Text variant="caption" tone="textFaint">
-                    {changes.total} release note{changes.total === 1 ? '' : 's'}
+                    {changes.total} in {changes.days} days
                   </Text>
                 </Row>
 
@@ -141,13 +149,14 @@ export default function LearnScreen() {
                 ))}
 
                 <Text variant="caption" tone="textFaint">
-                  Pulled nightly from the official Google Cloud, AWS and Azure release feeds.
-                  Every line links to the vendor's own page, so a renamed product or a
-                  superseded control shows up here rather than in an interview.
+                  Pulled nightly from {CLOUD_META[profile.cloudPreference].label} release
+                  feeds, following the cloud set in your profile. Every line links to the
+                  vendor's own page, so a renamed product or a superseded control shows up
+                  here rather than in an interview.
                 </Text>
               </Stack>
             </Card>
-          </Animated.View>
+          </View>
           <Spacer size={space.md} />
         </>
       ) : null}
