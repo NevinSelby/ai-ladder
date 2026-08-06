@@ -121,7 +121,8 @@ export default function ProfileScreen() {
     setSyncNote(
       result.error
         ? result.error
-        : `Backed up ${result.pushed.attempts} answers and ${result.pushed.lessons} lessons.`
+        : `Synced. Sent ${result.pushed.attempts} answer${result.pushed.attempts === 1 ? '' : 's'}` +
+          `${result.pulled ? ', and pulled your account history down.' : '.'}`
     );
     setSyncing(false);
     refresh();
@@ -381,11 +382,12 @@ export default function ProfileScreen() {
                 <>
                   <Text variant="smallStrong">{session.user.email}</Text>
                   <Text variant="caption" tone="textFaint">
-                    Progress is saved here first, then copied to your account. A new phone
-                    signs in and picks up where you left off.
+                    Progress is saved on this device first, then merged with your account.
+                    Syncing pulls anything your other devices have done and pushes anything
+                    this one has.
                   </Text>
                   <Button
-                    title={syncing ? 'Backing up' : 'Back up now'}
+                    title={syncing ? 'Syncing' : 'Sync now'}
                     kind="secondary"
                     full
                     disabled={syncing}

@@ -17,6 +17,7 @@ import { bootstrapLocalData, DatabaseProvider, db, useDatabase } from '@/db';
 import { setHapticsFlag } from '@/lib/haptics';
 import { currentSession, initAuthPrefs } from '@/lib/supabase';
 import { syncNow } from '@/data/sync';
+import { useRefreshAppState } from '@/hooks/use-app-state';
 import { space, useTheme } from '@/theme';
 import { MotionProvider } from '@/theme/motion-prefs';
 import { TutorialProvider } from '@/components/tutorial';
@@ -28,6 +29,7 @@ const queryClient = new QueryClient({
 });
 
 function Boot({ children }: { children: React.ReactNode }) {
+  const refresh = useRefreshAppState();
   const theme = useTheme();
   const { ready, error } = useDatabase();
   const [seeded, setSeeded] = useState(false);
@@ -55,10 +57,16 @@ function Boot({ children }: { children: React.ReactNode }) {
         // Remember-me must be known before the auth client reads its storage,
         // or a not-remembered session would resurrect from disk.
         await initAuthPrefs();
-        // Signed-in phones sync silently at launch; failures are the outbox's
-        // problem, never the user's.
+        // Signed-in devices sync silently at launch; failures are the outbox's
+        // problem, never the user's. The refresh afterward is essential: the
+        // pull writes straight to SQLite, and without invalidating the query
+        // cache the screens keep rendering whatever they read before the pull
+        // landed, so a freshly signed-in device showed a partial picture.
         currentSession()
           .then((session) => (session ? syncNow(db) : null))
+          .then((result) => {
+            if (result) refresh();
+          })
           .catch(() => {});
         if (!canceled) setSeeded(true);
       } catch (err) {
