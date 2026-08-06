@@ -17,6 +17,7 @@ import { useConfirmExit } from '@/components/confirm-exit';
 import { IconArrowLeft, IconArrowRight, IconCheck, IconCross, IconGem } from '@/components/icons';
 import { Bar, Button, Card, Chip, Divider, Eyebrow, Row, Stack, Text } from '@/components/ui';
 import { applyAttemptsToBoard } from '@/data/accounts';
+import { syncNow } from '@/data/sync';
 import { planAttempt, persistAttempts, type PlannedAttempt } from '@/data/attempts';
 import { tapHaptic } from '@/lib/haptics';
 import { Confetti, CountUp } from '@/components/celebrate';
@@ -216,6 +217,8 @@ export default function ArenaSession() {
       db,
       next.map((r) => ({ item: r.item, score: r.item.payload.defensible === 'either' ? 1 : r.correct ? 1 : 0, attemptId: r.attemptId }))
     );
+    // Same as the drill: do not make the user relaunch to see this elsewhere.
+    void syncNow(db).catch(() => {});
     refresh();
     setStage('summary');
   }, [item, picked, hitPoints, results, index, items.length, refresh]);

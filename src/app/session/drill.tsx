@@ -29,6 +29,7 @@ import {
   Text,
 } from '@/components/ui';
 import { applyAttemptsToBoard } from '@/data/accounts';
+import { syncNow } from '@/data/sync';
 import { planAttempt, persistAttempts, type PlannedAttempt } from '@/data/attempts';
 import { successHaptic, warningHaptic } from '@/lib/haptics';
 import { Confetti, CountUp } from '@/components/celebrate';
@@ -239,6 +240,10 @@ export default function DrillSession() {
       db,
       results.map((r) => ({ item: r.item, score: r.score, attemptId: r.attemptId }))
     );
+    // Upload immediately rather than waiting for the next cold start, so a
+    // session finished on the phone is visible on another device right away.
+    void syncNow(db).catch(() => {});
+
     setOutcome({
       perfectBonus,
       leveledUp: after.index > before.index ? after : null,
