@@ -54,19 +54,7 @@ services:
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
 
-  # ── Content freshness ────────────────────────────────────────────────────
-  # Pulls vendor release feeds nightly so the curriculum can notice when a
-  # product is renamed or a control is superseded. Deliberately model-free: it
-  # is cheap, idempotent, and needs no AI credentials, which is why it can run
-  # before the generation stages are configured.
-  - type: cron
-    name: ai-ladder-ingest
-    runtime: node
-    schedule: "17 3 * * *"
-    buildCommand: npm ci
-    startCommand: node pipeline/ingest.mjs
-    envVars:
-      # Direct Postgres connection string for the Supabase project. Set in the
-      # dashboard, never in the repository.
-      - key: DATABASE_URL
-        sync: false
+# The nightly ingest job is not declared here. Render cron jobs require a paid
+# plan, so it runs as a GitHub Actions schedule instead, in
+# .github/workflows/ingest.yml. The job is host-agnostic: it needs only
+# DATABASE_URL, so moving it back here later is a one-line change.

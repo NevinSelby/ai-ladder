@@ -59,6 +59,25 @@ runtime, which is why it lives in `public/` rather than the bundle.
 route in Node, where IndexedDB, localStorage and wasm do not exist, and the
 build fails on the first `AsyncStorage` read.
 
+### The freshness pipeline
+
+`pipeline/ingest.mjs` pulls vendor release feeds (GCP release notes, Vertex
+release notes, AWS What's New, Azure updates) into `source_documents`, deduped
+by content hash so a re-run is free. It calls no model, which is why it runs
+today: only the later triage and generation stages need an Anthropic key.
+
+It is scheduled by `.github/workflows/ingest.yml` rather than Render, because
+Render cron jobs require a paid plan. Set one repository secret to enable it:
+Settings, Secrets and variables, Actions, `DATABASE_URL`, holding the Supabase
+direct connection string. Then run it once by hand from the Actions tab to
+confirm.
+
+Still to deploy, both blocked on an `ANTHROPIC_API_KEY`:
+
+- `supabase/functions/generate` triage, generate, critique, publish gate
+- `supabase/functions/staleness` matches published items against newer sources
+  and quarantines the ones a release note has invalidated
+
 ### Deploying to Render
 
 `render.yaml` is a complete blueprint: static site, `npm run build:web`,

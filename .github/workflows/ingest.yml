@@ -1,0 +1,50 @@
+# Nightly content freshness sweep.
+#
+# This runs here rather than on Render because Render's cron jobs require a
+# paid plan, while GitHub Actions schedules are free on a repository that
+# already exists. The job itself is host-agnostic: `node pipeline/ingest.mjs`
+# needs only DATABASE_URL, so moving it later is a one-line change.
+#
+# Set the secret once: repository Settings, Secrets and variables, Actions,
+# New repository secret, named DATABASE_URL, holding the Supabase direct
+# connection string.
+
+name: Ingest release notes
+
+on:
+  schedule:
+    # 03:17 UTC. Deliberately not on the hour: every scheduler in the world
+    # fires at :00, and shared runners are slowest then.
+    - cron: '17 3 * * *'
+  # Lets a run be triggered by hand from the Actions tab, which is how you
+  # verify the secret without waiting a day.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Only the database driver is needed. Installing the whole app would pull
+      # the React Native toolchain for a job that fetches four RSS feeds.
+      - name: Install driver
+        run: npm install pg@8 --no-save --no-audit --no-fund
+
+      - name: Fetch release notes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL secret is not set. Add it in repository settings."
+            exit 1
+          fi
+          node pipeline/ingest.mjs
