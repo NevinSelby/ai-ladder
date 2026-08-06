@@ -23,7 +23,7 @@ import { attemptSummary } from '@/data/attempts';
 import { lessonStats, recentDays } from '@/data/learning';
 import { setDailyGoal, setDisplayName, setHapticsEnabled } from '@/data/profile';
 import { resetAllProgress } from '@/data/reset';
-import { pendingCount, syncNow } from '@/data/sync';
+import { pendingCount, restoreFromAccount, syncNow } from '@/data/sync';
 import { db } from '@/db';
 import { useProfile, useRefreshAppState } from '@/hooks/use-app-state';
 import { useAuthSession } from '@/hooks/use-auth';
@@ -60,6 +60,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -125,6 +126,15 @@ export default function ProfileScreen() {
           `${result.pulled ? ', and pulled your account history down.' : '.'}`
     );
     setSyncing(false);
+    refresh();
+  };
+
+  const runRestore = async () => {
+    setRestoring(true);
+    setSyncNote(null);
+    const result = await restoreFromAccount(db);
+    setSyncNote(result.error ? result.error : 'Restored this device from your account.');
+    setRestoring(false);
     refresh();
   };
 
@@ -398,6 +408,17 @@ export default function ProfileScreen() {
                       {syncNote}
                     </Text>
                   ) : null}
+                  <Button
+                    title={restoring ? 'Restoring' : 'Restore from account'}
+                    kind="ghost"
+                    full
+                    disabled={restoring || syncing}
+                    onPress={runRestore}
+                  />
+                  <Text variant="caption" tone="textFaint">
+                    Replaces what is on this device with your account's copy. Anything this
+                    device has not uploaded yet is sent first, so nothing is lost.
+                  </Text>
                   <Button title="Sign out" kind="ghost" full onPress={runSignOut} />
                 </>
               ) : (

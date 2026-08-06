@@ -505,3 +505,175 @@ export async function pendingCount(db: Database): Promise<number> {
     .where(isNull(attempts.syncedAt));
   return rows[0]?.n ?? 0;
 }
+
+/**
+ * Replace local progress with the account's copy.
+ *
+ * `syncNow` merges, and merging is where every cross-device bug in this app
+ * has come from: two half-truths reconciled by rules ("take the maximum",
+ * "take the later date") can disagree with each other and with the attempt
+ * log, and the result is a device showing a plausible but wrong number.
+ *
+ * This does not merge. Pending local work is pushed first so nothing is lost,
+ * then every progress table is emptied and refilled from the server, and the
+ * derived values are recomputed from the restored attempts. The account is the
+ * answer, not a vote.
+ *
+ * Content and settings are untouched: this restores progress, not the app.
+ */
+export async function restoreFromAccount(db: Database): Promise<SyncResult> {
+  const at = new Date().toISOString();
+  const empty = { attempts: 0, srs: 0, accounts: 0, lessons: 0 };
+  if (!supabase) return { pushed: empty, pulled: false, error: 'not configured', at };
+  const client = supabase;
+
+  const { data: auth } = await client.auth.getSession();
+  const userId = auth.session?.user.id;
+  if (!userId) return { pushed: empty, pulled: false, error: 'not signed in', at };
+
+  // Upload anything this device has that the account has not seen, so a
+  // restore can never be the thing that loses work.
+  const pushResult = await syncNow(db);
+  if (pushResult.error) return pushResult;
+
+  try {
+    const [remoteAttempts, remoteDays, remoteSrs, remoteLessons, remoteAccounts, remoteProfile] =
+      await Promise.all([
+        client.from('attempts').select('*').eq('user_id', userId),
+        client.from('streak_days').select('*').eq('user_id', userId),
+        client.from('srs_states').select('*').eq('user_id', userId),
+        client.from('lesson_progress').select('*').eq('user_id', userId),
+        client.from('accounts').select('*').eq('user_id', userId),
+        client.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      ]);
+
+    const failure = [remoteAttempts, remoteDays, remoteSrs, remoteLessons, remoteAccounts].find(
+      (r) => r.error
+    );
+    if (failure?.error) throw new Error(failure.error.message);
+
+    // Clear only after every read succeeded, so a network failure cannot leave
+    // the device empty.
+    await db.delete(attempts).run();
+    await db.delete(streakDays).run();
+    await db.delete(srsStates).run();
+    await db.delete(lessonProgress).run();
+
+    for (const row of remoteAttempts.data ?? []) {
+      await db
+        .insert(attempts)
+        .values({
+          id: row.id,
+          itemId: row.item_id,
+          mode: row.mode,
+          score: Number(row.score),
+          response: row.response,
+          feedback: row.feedback ?? null,
+          meter: row.meter,
+          xp: row.xp,
+          elapsedMs: row.elapsed_ms,
+          createdAt: row.created_at,
+          syncedAt: at,
+        })
+        .run();
+    }
+
+    for (const row of remoteDays.data ?? []) {
+      await db
+        .insert(streakDays)
+        .values({
+          day: row.day,
+          sessions: row.sessions,
+          xp: row.xp,
+          itemsAnswered: row.items_answered,
+          lessonsRead: row.lessons_read,
+          syncedAt: at,
+        })
+        .run();
+    }
+
+    for (const row of remoteSrs.data ?? []) {
+      await db
+        .insert(srsStates)
+        .values({
+          nodeId: row.node_id,
+          stability: row.stability,
+          difficulty: row.difficulty,
+          lastReview: row.last_review,
+          due: row.due,
+          reps: row.reps,
+          lapses: row.lapses,
+          syncedAt: at,
+        })
+        .run();
+    }
+
+    for (const row of remoteLessons.data ?? []) {
+      await db
+        .insert(lessonProgress)
+        .values({
+          lessonId: row.lesson_id,
+          completedAt: row.completed_at,
+          secondsSpent: row.seconds_spent,
+          syncedAt: at,
+        })
+        .run();
+    }
+
+    for (const row of remoteAccounts.data ?? []) {
+      await db
+        .insert(accounts)
+        .values({
+          id: row.account_id,
+          phase: row.phase,
+          health: row.health,
+          expectations: row.expectations,
+          status: row.status,
+          updatedAt: row.updated_at,
+          syncedAt: at,
+        })
+        .onConflictDoUpdate({
+          target: accounts.id,
+          set: {
+            phase: row.phase,
+            health: row.health,
+            expectations: row.expectations,
+            status: row.status,
+            updatedAt: row.updated_at,
+            syncedAt: at,
+          },
+        })
+        .run();
+    }
+
+    // Points cannot be derived from anything, so the server's number is taken
+    // verbatim rather than max-merged.
+    const remote = remoteProfile.data;
+    if (remote) {
+      await db
+        .update(profileState)
+        .set({
+          points: remote.points ?? 0,
+          bestCombo: remote.best_combo ?? 0,
+          displayName: remote.display_name ?? null,
+          remoteUserId: userId,
+          syncedAt: at,
+        })
+        .where(eq(profileState.id, 1))
+        .run();
+    }
+
+    // Meters, the streak and the calendar are recomputed from the restored
+    // attempts by the next sync, which is the only place those numbers are
+    // allowed to come from.
+    const healed = await syncNow(db);
+    return { ...healed, pulled: true, at };
+  } catch (error) {
+    return {
+      pushed: empty,
+      pulled: false,
+      error: error instanceof Error ? error.message : String(error),
+      at,
+    };
+  }
+}

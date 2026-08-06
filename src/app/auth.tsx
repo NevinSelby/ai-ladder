@@ -15,7 +15,7 @@ import { IconArrowLeft, IconCheck, IconEye, IconEyeOff } from '@/components/icon
 import { LadderMark } from '@/components/logo';
 import { Tappable } from '@/components/tappable';
 import { Button, Card, Divider, Eyebrow, Row, Stack, Text } from '@/components/ui';
-import { syncNow } from '@/data/sync';
+import { restoreFromAccount } from '@/data/sync';
 import { db } from '@/db';
 import { useRefreshAppState } from '@/hooks/use-app-state';
 import { successHaptic } from '@/lib/haptics';
@@ -81,7 +81,7 @@ export default function AuthScreen() {
     }
     setPhase('syncing');
     successHaptic();
-    await syncNow(db);
+    await restoreFromAccount(db);
     refresh();
     setBusy(false);
     router.back();
@@ -117,7 +117,7 @@ export default function AuthScreen() {
     // "tied to you" is true the moment the screen dismisses.
     setPhase('syncing');
     successHaptic();
-    await syncNow(db);
+    await restoreFromAccount(db);
     refresh();
     setBusy(false);
     router.back();
