@@ -2,7 +2,7 @@
 
 A daily practice app for forward deployed engineers, solutions architects and AI engineers.
 
-Devmaxx-shaped daily loop — one short session, spaced repetition, XP, streaks, a career ladder —
+Devmaxx-shaped daily loop: one short session, spaced repetition, XP, streaks, a career ladder,
 but aimed at what these roles are actually assessed on. FDE interviews and FDE work are scored on
 **methodology, not recall**: the signature decomposition round has the lowest pass rate of any stage
 and requires almost no code. So multiple choice is the warm-up here, not the product.
@@ -97,7 +97,7 @@ row-level security is what protects the data.
 Depth · Platform · AI Craft · Client · Scope.
 
 Your level is capped by your **lowest** meter, not your total XP. You cannot grind multiple choice
-to Principal Architect while never sitting in a simulated room with an angry CTO — which is the
+to Principal Architect while never sitting in a simulated room with an angry CTO, which is the
 failure mode of every other practice app, and the exact skill split the real interview loop screens
 for. The Progress screen shows a "shadow level" naming what your best meter *would* have bought you.
 
@@ -114,7 +114,7 @@ rather than hiding them.
 
 ```
 shared/            Contract shared by the app and (later) the Supabase edge functions
-  content.ts         zod schema per game mode — the generator's target too
+  content.ts         zod schema per game mode, the generator's target too
   taxonomy.ts        93 concept nodes across 7 branches
   srs.ts             FSRS-4.5
   progression.ts     meters, levels, XP, combo, goals
@@ -138,7 +138,7 @@ produce is written locally first and flushed upstream later, so a drill works in
 Enforced by `npm run validate:content`, which is also the publish gate generated content will face:
 
 - every item cites at least one taxonomy node, and the node must be `live`
-- every item carries at least one source citation — ungrounded content cannot publish
+- every item carries at least one source citation; ungrounded content cannot publish
 - every MCQ distractor carries a `whyWrong`; an option nobody can justify teaches nothing
 - multi-select items cannot have every option correct
 
@@ -150,6 +150,6 @@ generator's first target.
 At Cloud Next '26 Vertex AI was rebranded to the **Gemini Enterprise Agent Platform**, and Vertex
 roadmap now ships through it. A hand-authored bank drifts. Verified live sources for the generator:
 
-- GCP release notes — `https://docs.cloud.google.com/feeds/gcp-release-notes.xml`
+- GCP release notes: `https://docs.cloud.google.com/feeds/gcp-release-notes.xml`
 - `bigquery-public-data.google_cloud_release_notes.release_notes`
 - Cloud Billing Catalog / Pricing API, for Napkin Math answers computed against current SKU prices
