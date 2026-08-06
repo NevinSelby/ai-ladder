@@ -6,6 +6,9 @@
  *   npm run test:logic
  */
 
+import { readFileSync, readdirSync } from 'node:fs';
+
+import { MODES } from '../shared/content';
 import { multiSelectScore, orderingScore, scoreDrill, scoreNapkin } from '../shared/scoring';
 import {
   crossedMilestone,
@@ -323,6 +326,20 @@ check('neutral items are served to everyone',
   matchesCloud(neutralItem, 'gcp') && matchesCloud(neutralItem, 'aws') && matchesCloud(neutralItem, 'azure'));
 check('all serves every cloud',
   matchesCloud(gcpItem, 'all') && matchesCloud(awsItem, 'all'));
+
+// ── Client and server agree on modes ───────────────────────────────────────
+// Shipping 'flaw' client-side without adding it to the Postgres enum broke
+// every upload for anyone who played it, with the failure showing up only as a
+// stuck outbox. A mode is a two-sided change, so this asserts both sides moved.
+
+const migrationSql = readdirSync('supabase/migrations')
+  .filter((file) => file.endsWith('.sql'))
+  .map((file) => readFileSync(`supabase/migrations/${file}`, 'utf8'))
+  .join('\n');
+
+for (const mode of MODES) {
+  check(`server enum knows the "${mode}" mode`, migrationSql.includes(`'${mode}'`));
+}
 
 // ── Report ─────────────────────────────────────────────────────────────────
 

@@ -1,0 +1,11 @@
+-- Spot the Flaw shipped as a client mode without being added to the server
+-- enum, so every attempt at it failed to upload with
+-- `invalid input value for enum content_mode: "flaw"` and sat in the outbox.
+--
+-- Adding a mode is therefore a two-sided change: the union in shared/content.ts
+-- and this enum have to move together, or the app silently stops syncing for
+-- anyone who plays the new mode.
+--
+-- Kept in its own migration because ALTER TYPE ... ADD VALUE cannot be used in
+-- the same transaction that later references the new value.
+alter type content_mode add value if not exists 'flaw';

@@ -209,16 +209,27 @@ export default function FlawSession() {
             const isPicked = picked === index;
             const show = revealed || alreadySolved;
 
-            const border = show && isFlaw
-              ? theme.negative
-              : show && isPicked
+            /**
+             * Finding the flaw is the win, so the flawed line is only red when
+             * it was missed. Marking a correct answer with a cross, which is
+             * what an earlier version did, reads as "you were wrong" at exactly
+             * the moment the user was right.
+             */
+            const foundIt = isFlaw && correct;
+            const border = show && foundIt
+              ? theme.positive
+              : show && isFlaw
                 ? theme.warning
-                : theme.border;
-            const fill = show && isFlaw
-              ? theme.negativeSoft
-              : show && isPicked
+                : show && isPicked
+                  ? theme.negative
+                  : theme.border;
+            const fill = show && foundIt
+              ? theme.positiveSoft
+              : show && isFlaw
                 ? theme.warningSoft
-                : theme.surface;
+                : show && isPicked
+                  ? theme.negativeSoft
+                  : theme.surface;
 
             return (
               <Pressable
@@ -254,9 +265,14 @@ export default function FlawSession() {
                   <Text variant="small" style={{ flex: 1 }}>
                     {line}
                   </Text>
-                  {show && isFlaw ? <IconCross color={theme.negative} size={16} /> : null}
+                  {show && foundIt ? <IconCheck color={theme.positive} size={16} /> : null}
+                  {show && isFlaw && !correct ? (
+                    <Text variant="caption" tone="warning">
+                      the flaw
+                    </Text>
+                  ) : null}
                   {show && isPicked && !isFlaw ? (
-                    <IconEye color={theme.warning} size={16} />
+                    <IconCross color={theme.negative} size={16} />
                   ) : null}
                 </View>
               </Pressable>
