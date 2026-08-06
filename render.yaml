@@ -28,6 +28,20 @@ services:
         destination: /index.html
 
     headers:
+      # Hashed bundles are immutable: a new build produces a new filename, so
+      # these can be cached hard and forever.
+      - path: /_expo/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+
+      # The shell must never be cached. Render's default (s-maxage=300) meant
+      # the CDN kept serving an index.html pointing at the previous bundle for
+      # five minutes after every deploy, so a reload right after shipping ran
+      # the old code and looked like the fix had not worked.
+      - path: /*
+        name: Cache-Control
+        value: no-cache, must-revalidate
+
       # sql.js fetches its wasm at runtime; a wrong content type makes
       # WebAssembly.instantiate reject the response.
       - path: /*.wasm
