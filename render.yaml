@@ -1,0 +1,41 @@
+# Render blueprint for the AI Ladder web build.
+#
+# The web target is a single-page app: `web.output` is "single" in app.json
+# because static prerendering runs every route in Node, where the browser APIs
+# the app boots on (IndexedDB, localStorage, wasm) do not exist.
+#
+# Because it is an SPA, every path has to fall through to index.html or a
+# refresh on /progress returns a 404.
+services:
+  - type: web
+    name: ai-ladder
+    runtime: static
+    buildCommand: npm ci && npm run build:web
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+
+    # EXPO_PUBLIC_* values are inlined at build time, so these must be present
+    # in Render's environment or the deployed site ships unable to sync.
+    envVars:
+      - key: EXPO_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: EXPO_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    headers:
+      # sql.js fetches its wasm at runtime; a wrong content type makes
+      # WebAssembly.instantiate reject the response.
+      - path: /*.wasm
+        name: Content-Type
+        value: application/wasm
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

@@ -1,0 +1,517 @@
+import type { DrillItem } from '@shared/content';
+
+import { cite } from '../sources';
+
+/** Delivery economics and customer craft. The half of the job that is not code. */
+export const DRILL_DELIVERY: DrillItem[] = [
+  // ── Delivery & Economics ─────────────────────────────────────────────────
+  {
+    id: 'v.scope.boundary',
+    mode: 'drill',
+    nodeIds: ['del.discovery_scope', 'cust.saying_no'],
+    difficulty: 'core',
+    explanation:
+      'A scope document is only useful if it says what is out. Listing only inclusions leaves every omission arguable, and the argument happens in week nine when there is no room to absorb it.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'What makes a scope statement actually hold when pressure arrives?',
+      choices: [
+        { id: 'a', text: 'An explicit out-of-scope list agreed at the same time as the in-scope list' },
+        { id: 'b', text: 'A detailed list of deliverables', whyWrong: 'Every omission remains arguable, and it will be argued at the worst possible moment.' },
+        { id: 'c', text: 'A signed contract', whyWrong: 'Legal recourse is not the same as a working relationship where expectations match.' },
+        { id: 'd', text: 'A change control process', whyWrong: 'The mechanism for handling changes, useless without a baseline to change from.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.risk.first',
+    mode: 'drill',
+    nodeIds: ['del.risk_sequencing', 'del.thin_slice'],
+    difficulty: 'core',
+    explanation:
+      'Sequence by what could kill the project, not by what is comfortable. The purpose of the first two weeks is to find out whether the thing is possible, building the easy layers first feels productive and defers the only question that matters.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Four workstreams: UI, data access negotiation, model quality on their corpus, and deployment automation. Which goes first?',
+      choices: [
+        { id: 'a', text: 'Data access: without it, nothing else can be validated, and it depends on people you do not control' },
+        { id: 'b', text: 'The UI, so stakeholders can see progress', whyWrong: 'Visible progress that reduces no risk, and raises expectations while doing it.' },
+        { id: 'c', text: 'Deployment automation, to avoid rework later', whyWrong: 'Automating a pipeline for a system that may not be feasible.' },
+        { id: 'd', text: 'Model quality, since it is the hardest', whyWrong: 'The right instinct, and you cannot test it without the data. Access gates it.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.pilot.gap',
+    mode: 'drill',
+    nodeIds: ['del.pilot_to_prod'],
+    difficulty: 'deep',
+    explanation:
+      'The pilot-to-production gap is mostly non-functional: security review, SLOs, on-call, data volume, error handling, access management. Teams estimate it as "a couple of weeks of hardening" and it routinely takes longer than the pilot did.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'multi',
+      stem: 'What typically sits between a working pilot and production? Pick all that apply.',
+      choices: [
+        { id: 'a', text: 'A full security review and remediation of its findings' },
+        { id: 'b', text: 'Agreed SLOs and someone on call to defend them' },
+        { id: 'c', text: 'Behavior at real data volume rather than pilot volume' },
+        { id: 'd', text: 'Access management for the real user population' },
+        { id: 'e', text: 'Better model accuracy', whyWrong: 'Sometimes needed, and it is rarely what blocks a working pilot from shipping. The blockers are almost always non-functional.' },
+      ],
+      correctIds: ['a', 'b', 'c', 'd'],
+    },
+  },
+  {
+    id: 'v.napkin.tokens',
+    mode: 'drill',
+    nodeIds: ['del.napkin', 'ai.cost'],
+    difficulty: 'core',
+    explanation:
+      'Doing this arithmetic out loud in the room is a solutions-architect superpower. 5,000 agents × 30 conversations × 22 working days ≈ 3.3M conversations per month; at roughly 10k tokens each that is about 33 billion tokens. The point is not precision. It is knowing within a few minutes whether the idea is affordable.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: '5,000 agents, 30 conversations each per working day, ~10k tokens per conversation. Roughly how many tokens per month?',
+      choices: [
+        { id: 'a', text: 'Around 33 billion' },
+        { id: 'b', text: 'Around 1.5 billion', whyWrong: 'Off by roughly 20×. This is the daily figure, not the monthly one.' },
+        { id: 'c', text: 'Around 300 billion', whyWrong: 'Ten times too high; likely 30 days at ten times the conversation length.' },
+        { id: 'd', text: 'Around 150 million', whyWrong: 'Two orders of magnitude low. Worth catching before you quote a price.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.napkin.index',
+    mode: 'drill',
+    nodeIds: ['del.napkin', 'gcp.vector_search'],
+    difficulty: 'deep',
+    explanation:
+      'A float32 vector of 768 dimensions is about 3 KB. Four million of them is roughly 12 GB before index overhead, which typically adds a substantial multiple. Knowing this stops you promising an in-memory index that will not fit on the instance the customer already budgeted for.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: '4 million chunks, 768-dimension float32 embeddings. Roughly how much memory for the raw vectors?',
+      choices: [
+        { id: 'a', text: 'Around 12 GB, before index structure overhead' },
+        { id: 'b', text: 'Around 1.2 GB', whyWrong: 'Ten times low: likely treating each dimension as one byte rather than four.' },
+        { id: 'c', text: 'Around 120 GB', whyWrong: 'Ten times high.' },
+        { id: 'd', text: 'Around 3 GB', whyWrong: 'This is the size of one thousand vectors’ worth of arithmetic, not four million.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.poc.criteria',
+    mode: 'drill',
+    nodeIds: ['del.poc_exit', 'cust.expectations'],
+    difficulty: 'core',
+    explanation:
+      'The prior vendor at Northwind failed because success was judged on the worst 5% of deliveries, which nobody had agreed in advance. Naming the tail behavior in the exit criterion, not just the average, is what prevents the same outcome.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A previous vendor "was accurate on average" and still failed the pilot. What belongs in your exit criterion that theirs lacked?',
+      choices: [
+        { id: 'a', text: 'A stated bound on worst-case behavior, not only an average' },
+        { id: 'b', text: 'A higher average accuracy target', whyWrong: 'Raises a bar that was never the one being judged.' },
+        { id: 'c', text: 'A longer pilot period', whyWrong: 'More time to fail the same unstated test.' },
+        { id: 'd', text: 'More stakeholders in the review', whyWrong: 'More opinions about an undefined standard.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.slo.shared',
+    mode: 'drill',
+    nodeIds: ['del.slo', 'del.tco'],
+    difficulty: 'deep',
+    explanation:
+      'You cannot offer an availability number above what your dependencies deliver. Committing to 99.99% while sitting on a 99.9% dependency means signing up for penalties you will pay. The arithmetic is unforgiving and worth doing before the contract.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A customer wants 99.99% for a service whose model dependency publishes 99.9%. What do you say?',
+      choices: [
+        { id: 'a', text: 'That you cannot exceed your dependency without redundancy across providers, and price what that would take' },
+        { id: 'b', text: 'Agree, and add retries', whyWrong: 'Retries help with transient errors and do not lift you above a dependency’s availability ceiling.' },
+        { id: 'c', text: 'Agree, and hope the dependency exceeds its published number', whyWrong: 'Betting the contract on someone else beating their own SLA.' },
+        { id: 'd', text: 'Refuse to discuss availability targets', whyWrong: 'Avoids a conversation that is genuinely part of the job.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.handover.runbook',
+    mode: 'drill',
+    nodeIds: ['del.handover'],
+    difficulty: 'core',
+    explanation:
+      'A handover succeeds when the receiving team has already handled a real incident with you watching rather than doing. Documentation they have never used is documentation they will not trust at 3am.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Two weeks before handover, what best predicts that it will actually stick?',
+      choices: [
+        { id: 'a', text: 'Their team has already resolved a real incident with you observing rather than intervening' },
+        { id: 'b', text: 'A complete and well-written runbook', whyWrong: 'Necessary, and untested documentation is a hypothesis rather than a capability.' },
+        { id: 'c', text: 'A recorded walkthrough of the architecture', whyWrong: 'Passive. Nobody rewatches it during an incident.' },
+        { id: 'd', text: 'A support contract for six months', whyWrong: 'Delays the handover rather than completing it.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'v.tco.compare',
+    mode: 'drill',
+    nodeIds: ['del.tco'],
+    difficulty: 'deep',
+    explanation:
+      'A TCO comparison that omits the people cost is not a comparison. Self-hosting trades a platform bill for engineer time, and engineer time is usually the larger and more permanent number, but only if you put it in the table.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'multi',
+      stem: 'What belongs in a TCO comparison between a managed service and self-hosting? Pick all that apply.',
+      choices: [
+        { id: 'a', text: 'Engineer time to build and to operate, at a loaded rate' },
+        { id: 'b', text: 'The cost of on-call coverage' },
+        { id: 'c', text: 'Idle capacity during low-utilisation periods' },
+        { id: 'd', text: 'Migration cost if the decision is reversed' },
+        { id: 'e', text: 'Only the monthly infrastructure and license bill', whyWrong: 'The comparison that makes self-hosting look cheap. It is the one every vendor evaluation starts with and none should end with.' },
+      ],
+      correctIds: ['a', 'b', 'c', 'd'],
+    },
+  },
+  {
+    id: 'v.thin_slice.week2',
+    mode: 'drill',
+    nodeIds: ['del.thin_slice', 'del.risk_sequencing'],
+    difficulty: 'deep',
+    explanation:
+      'The test of a thin slice is whether it could fail. A slice that cannot possibly fail has proven nothing. The entire value is in touching every layer with one real record so the risky part gets exercised early enough to act on.',
+    diagramId: 'thin-slice',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'How do you tell whether a proposed thin slice is worth building?',
+      choices: [
+        { id: 'a', text: 'Ask what could go wrong when you run it. If nothing can, it proves nothing' },
+        { id: 'b', text: 'Check that it can be built in two weeks', whyWrong: 'A schedule test, not a value test. Plenty of two-week builds prove nothing.' },
+        { id: 'c', text: 'Check that stakeholders will find it impressive', whyWrong: 'Optimises for the demo rather than for information.' },
+        { id: 'd', text: 'Check that it reuses existing components', whyWrong: 'Efficiency, unrelated to whether it reduces uncertainty.' },
+      ],
+      correctId: 'a',
+    },
+  },
+
+  // ── Customer Craft ───────────────────────────────────────────────────────
+  {
+    id: 'c.exec.answer_first',
+    mode: 'drill',
+    nodeIds: ['cust.exec_comms'],
+    difficulty: 'core',
+    explanation:
+      'Executives read top-down and stop when they have what they need. Answer first, then the two or three reasons, then detail on request. Building to a conclusion is how engineers write and how executives stop listening.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'order',
+      stem: 'Order a status update for a steering committee.',
+      steps: [
+        'The answer: on track for the 14th, with one risk',
+        'The risk and what you are doing about it',
+        'What you need from them, if anything',
+        'Supporting detail, available if asked',
+      ],
+    },
+  },
+  {
+    id: 'c.exec.slide',
+    mode: 'drill',
+    nodeIds: ['cust.exec_comms', 'cust.expectations'],
+    difficulty: 'core',
+    explanation:
+      'An architecture diagram in front of an executive audience answers a question they did not ask and invites scrutiny of decisions they cannot evaluate. Lead with the business outcome; keep the architecture in the appendix for the person who asks.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You have one slide for a CFO. What goes on it?',
+      choices: [
+        { id: 'a', text: 'The business outcome, its measurement, and what it costs to run' },
+        { id: 'b', text: 'The architecture diagram', whyWrong: 'Answers a question they did not ask and invites scrutiny of decisions they cannot evaluate.' },
+        { id: 'c', text: 'The project timeline', whyWrong: 'Relevant to a steering committee, secondary for a CFO deciding whether to fund it.' },
+        { id: 'd', text: 'A model accuracy chart', whyWrong: 'An engineering metric presented to someone who compares against the cost of the status quo.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.stakeholder.missing',
+    mode: 'drill',
+    nodeIds: ['cust.stakeholders'],
+    difficulty: 'deep',
+    explanation:
+      'The person who can stop the project is frequently not in the kickoff. Security, legal, the works council, the platform team with a six-month queue, finding them in week one is cheap, and finding them in week ten is a schedule event.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Kickoff had the sponsor, the product owner and two engineers. Who do you go find in week one?',
+      choices: [
+        { id: 'a', text: 'Whoever can say no later: security, legal, and the team that owns the systems you must integrate with' },
+        { id: 'b', text: 'More engineers, to accelerate delivery', whyWrong: 'Capacity is rarely the constraint in week one. Permission is.' },
+        { id: 'c', text: 'The end users', whyWrong: 'Valuable, and they cannot block you the way an unconsulted security lead can.' },
+        { id: 'd', text: 'The sponsor’s manager', whyWrong: 'Going over your sponsor’s head in week one damages the relationship you most need.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.discovery.silence',
+    mode: 'drill',
+    nodeIds: ['cust.discovery_q'],
+    difficulty: 'deep',
+    explanation:
+      'Filling a pause with your own suggestion ends the disclosure. Most of the useful information in a discovery call arrives in the sentence after the one you were tempted to interrupt.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You ask an open question and the customer pauses for several seconds. What do you do?',
+      choices: [
+        { id: 'a', text: 'Wait: the most useful answer usually comes after the pause' },
+        { id: 'b', text: 'Offer an example to help them along', whyWrong: 'Anchors their answer to your example and ends the disclosure you were about to get.' },
+        { id: 'c', text: 'Rephrase the question', whyWrong: 'Signals the question was faulty when they were simply thinking.' },
+        { id: 'd', text: 'Move on to the next question', whyWrong: 'Abandons the one that was working.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.ownership.language',
+    mode: 'drill',
+    nodeIds: ['cust.ownership'],
+    difficulty: 'intro',
+    explanation:
+      'Interviewers listen for the difference between "I will" and "we are looking into it". The first is a commitment with a name and a date attached; the second is a status update disguised as an answer, and customers hear it as exactly that.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'The customer asks when the connector issue will be resolved. Which answer lands best?',
+      choices: [
+        { id: 'a', text: '"I will have a fix in staging by Thursday and will confirm either way on Thursday morning."' },
+        { id: 'b', text: '"We are looking into it and will keep you posted."', whyWrong: 'No owner, no date, no commitment. It is the phrase customers learn to distrust.' },
+        { id: 'c', text: '"It is with the platform team now."', whyWrong: 'Passes the parcel. The customer contracted with you, not with their queue.' },
+        { id: 'd', text: '"It should be soon."', whyWrong: 'Unfalsifiable, and it will be quoted back at you.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.pushback.acknowledge',
+    mode: 'drill',
+    nodeIds: ['cust.pushback', 'cust.saying_no'],
+    difficulty: 'core',
+    explanation:
+      'Acknowledge the valid part first, and only then trade off. Leading with the objection makes the other person defend their position rather than engage with yours, you win the point and lose the decision.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'order',
+      stem: 'A customer proposes something that would break their own data governance. Order your response.',
+      steps: [
+        'Acknowledge the underlying need and that it is real',
+        'Name the specific constraint their proposal would breach',
+        'Offer a concrete alternative that meets the need',
+        'Ask what you have missed about their situation',
+      ],
+    },
+  },
+  {
+    id: 'c.expectations.demo',
+    mode: 'drill',
+    nodeIds: ['cust.expectations', 'cust.explaining_ai'],
+    difficulty: 'deep',
+    explanation:
+      'A demo sets an expectation whether or not you intend it to. Naming the gap between demo conditions and production conditions at the moment of the demo costs you nothing then, and saves you a difficult conversation later when the gap becomes visible.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You are about to demo on curated examples because the real data is not connected yet. What do you say first?',
+      choices: [
+        { id: 'a', text: 'That these are curated examples, what that means for what you can conclude, and when you will show real data' },
+        { id: 'b', text: 'Nothing: mention it if someone asks', whyWrong: 'Nobody asks, everyone assumes, and you spend the next month walking it back.' },
+        { id: 'c', text: 'That the results are preliminary', whyWrong: 'Vague enough to be heard as modesty rather than as a material caveat.' },
+        { id: 'd', text: 'That real data will perform better once tuned', whyWrong: 'A prediction you cannot support, made in the exact moment expectations are being set.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.badnews.options',
+    mode: 'drill',
+    nodeIds: ['cust.bad_news', 'del.discovery_scope'],
+    difficulty: 'deep',
+    explanation:
+      'Bad news with a single outcome puts the customer in the position of accepting or objecting. Bad news with two costed options makes them a decision-maker, which changes the conversation from a complaint into a choice.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You must tell a customer about a three-week slip. What most improves how the conversation goes?',
+      choices: [
+        { id: 'a', text: 'Bringing two costed options: hold the date and descope, or hold scope and move the date' },
+        { id: 'b', text: 'A detailed explanation of the technical cause', whyWrong: 'Reads as justification. They will ask for the cause if they want it.' },
+        { id: 'c', text: 'An apology and a commitment to work harder', whyWrong: 'Effort is not the constraint, and the promise is unverifiable.' },
+        { id: 'd', text: 'Waiting until you have fully solved it', whyWrong: 'Guarantees they hear it from someone else, which is the version that damages trust.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.saying_no.champion',
+    mode: 'drill',
+    nodeIds: ['cust.saying_no', 'cust.stakeholders'],
+    difficulty: 'edge',
+    explanation:
+      'When your champion asks for something out of bounds, the goal is to keep them a champion. Explaining the constraint plainly and handing them a narrower version they can announce lets them carry the governance conversation internally. Which is far more effective than you carrying it.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Your strongest internal champion asks for a scope change that would trigger a compliance review nobody has started. What do you do?',
+      choices: [
+        { id: 'a', text: 'Explain the classification issue plainly, offer a narrower version that ships on their date, and let them take the compliance conversation internally' },
+        { id: 'b', text: 'Agree, and raise compliance afterwards', whyWrong: 'Their compliance function finds out after an announcement, and your champion wears it.' },
+        { id: 'c', text: 'Decline and cite policy', whyWrong: 'Correct outcome, delivered in the way most likely to cost you the champion.' },
+        { id: 'd', text: 'Escalate to their compliance team yourself', whyWrong: 'Going around your champion, on their own turf.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.explaining.probability',
+    mode: 'drill',
+    nodeIds: ['cust.explaining_ai', 'ai.nondeterminism'],
+    difficulty: 'deep',
+    explanation:
+      'A non-technical stakeholder needs a decision, not a mechanism. Reframing from "how accurate is it" to "what happens on the cases it gets wrong, and how would we know" gives them something they can act on, and introduces the review workflow the design needed anyway.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'What is the most useful reframe when a non-technical stakeholder asks how accurate the system is?',
+      choices: [
+        { id: 'a', text: '"Here is what happens on the ones it gets wrong, and here is how you would know" ' },
+        { id: 'b', text: '"Accuracy depends on how you measure it"', whyWrong: 'True and heard as evasion.' },
+        { id: 'c', text: '"It is comparable to a human doing the same task"', whyWrong: 'A claim you almost certainly cannot support, and it invites exactly that comparison.' },
+        { id: 'd', text: '"Let me show you the confusion matrix"', whyWrong: 'The right artefact for a different audience.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.meeting.notes',
+    mode: 'drill',
+    nodeIds: ['cust.expectations', 'del.discovery_scope'],
+    difficulty: 'intro',
+    explanation:
+      'A short written summary after every consequential conversation costs five minutes and settles every later disagreement about what was agreed. It is the single cheapest habit in customer-facing engineering.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A verbal agreement was reached on a call about changing the delivery date. What do you do next?',
+      choices: [
+        { id: 'a', text: 'Send a short written summary of what was agreed, same day' },
+        { id: 'b', text: 'Update the project plan', whyWrong: 'Necessary, and a plan nobody confirmed is not an agreement.' },
+        { id: 'c', text: 'Tell your team', whyWrong: 'Internal only. The customer’s recollection is the one that will be disputed.' },
+        { id: 'd', text: 'Wait for them to confirm in writing', whyWrong: 'They will not, and then it never happened.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.frustrated.first',
+    mode: 'drill',
+    nodeIds: ['cust.pushback', 'cust.bad_news'],
+    difficulty: 'core',
+    explanation:
+      'A frustrated customer needs to be heard before they can hear you. Jumping to a solution while they are still describing the problem reads as not listening, and you will end up solving the wrong thing anyway.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A customer opens a call visibly angry about a missed commitment. What do you do first?',
+      choices: [
+        { id: 'a', text: 'Let them finish, then repeat back what went wrong in your own words before saying anything else' },
+        { id: 'b', text: 'Apologize immediately and move to the fix', whyWrong: 'Rushes past the part where they need to be sure you understood.' },
+        { id: 'c', text: 'Explain what caused it', whyWrong: 'Heard as excuse-making while they are still angry.' },
+        { id: 'd', text: 'Offer a discount or concession', whyWrong: 'Buys off a relationship problem with money, and signals the fix is not coming.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'c.discovery.constraint',
+    mode: 'drill',
+    nodeIds: ['cust.discovery_q', 'del.discovery_scope'],
+    difficulty: 'edge',
+    explanation:
+      'The question with the highest information value is usually the one about a hard constraint nobody volunteered, residency, an unmovable date, a system that cannot be touched. Those reshape the architecture, and they rarely appear in the brief.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You have time for one more question in a first discovery call. Which has the highest expected value?',
+      choices: [
+        { id: 'a', text: '"What constraint have we not talked about that would change how we build this?"' },
+        { id: 'b', text: '"What is your timeline?"', whyWrong: 'You will get a date. Dates rarely change the architecture; constraints do.' },
+        { id: 'c', text: '"Who else should be involved?"', whyWrong: 'Genuinely valuable, and second to surfacing an unstated hard constraint.' },
+        { id: 'd', text: '"What does success look like?"', whyWrong: 'Essential and you should already have asked it earlier in the call.' },
+      ],
+      correctId: 'a',
+    },
+  },
+];

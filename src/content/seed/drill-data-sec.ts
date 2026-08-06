@@ -1,0 +1,518 @@
+import type { DrillItem } from '@shared/content';
+
+import { cite } from '../sources';
+
+/** Data & integration engineering, plus security, compliance and governance. */
+export const DRILL_DATA_SEC: DrillItem[] = [
+  // ── Data & Integration ───────────────────────────────────────────────────
+  {
+    id: 'd.ingest.sftp',
+    mode: 'drill',
+    nodeIds: ['data.ingest_patterns', 'data.quality'],
+    difficulty: 'core',
+    explanation:
+      'The nightly file that does not arrive is the most common integration failure and the one least likely to be alarmed. An absence has no error to catch, so you need a deadline check that fires when nothing lands, otherwise the first person to notice is a business user looking at yesterday’s numbers.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A customer drops a nightly extract to a bucket at 03:40. What must your pipeline alert on that teams routinely forget?',
+      choices: [
+        { id: 'a', text: 'The file not arriving by a deadline, absence produces no error to catch' },
+        { id: 'b', text: 'Parse failures on malformed rows', whyWrong: 'Important, and it is the case everyone already handles because it throws.' },
+        { id: 'c', text: 'Schema drift in the header', whyWrong: 'Also important, and again it surfaces as a visible failure.' },
+        { id: 'd', text: 'Slow downstream queries', whyWrong: 'A performance concern, not an ingestion correctness one.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.quality.quarantine',
+    mode: 'drill',
+    nodeIds: ['data.quality', 'data.messy'],
+    difficulty: 'core',
+    explanation:
+      'Failing the whole batch on one bad row means a single supplier’s typo stops the business. Silently dropping it means nobody ever finds out. A quarantine table with the raw row and the reason keeps the pipeline moving and keeps the decision reversible.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: '2% of rows in a nightly load fail validation. What is the right behavior?',
+      choices: [
+        { id: 'a', text: 'Load the good rows, quarantine the bad ones with the raw payload and the reason, and alert on the rate' },
+        { id: 'b', text: 'Fail the entire batch', whyWrong: 'One supplier’s typo halts the business, and someone will eventually disable the check to unblock a release.' },
+        { id: 'c', text: 'Drop the bad rows and continue', whyWrong: 'Silent data loss. The 2% becomes 15% one week and nobody notices.' },
+        { id: 'd', text: 'Coerce them to defaults and load everything', whyWrong: 'Manufactures data that looks real and is not, which is worse than missing data.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.schema.canonical',
+    mode: 'drill',
+    nodeIds: ['data.schema_map', 'data.quality'],
+    difficulty: 'deep',
+    explanation:
+      'Mapping N systems pairwise is N-squared work and gets worse with every acquisition. A canonical model means each source needs one mapping in and one out, and disagreements surface as explicit reconciliation decisions rather than as silent inconsistencies.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Three acquired systems have three customer schemas, and a fourth acquisition is coming. What do you build?',
+      choices: [
+        { id: 'a', text: 'A canonical customer model, with one mapping per source into it' },
+        { id: 'b', text: 'Pairwise mappings between each system', whyWrong: 'Six mappings for three systems, ten for four, and every change touches several of them.' },
+        { id: 'c', text: 'Pick the largest system’s schema as the standard', whyWrong: 'Tempting, and it bakes in one business unit’s idiosyncrasies as everyone’s truth.' },
+        { id: 'd', text: 'Keep them separate and join at query time', whyWrong: 'Pushes the reconciliation problem onto every consumer, forever.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.cdc.deletes',
+    mode: 'drill',
+    nodeIds: ['data.cdc', 'sec.gdpr'],
+    difficulty: 'edge',
+    explanation:
+      'Query-based CDC polls for rows changed since a watermark and therefore cannot see a row that no longer exists. Deleted records linger in the target indefinitely. Which is an ordinary bug until an erasure request arrives, at which point it is a compliance failure.',
+    diagramId: 'cdc-cutover',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Why does query-based CDC on an updated_at column miss deletes?',
+      choices: [
+        { id: 'a', text: 'A deleted row is simply absent, so no query over the source can observe it' },
+        { id: 'b', text: 'Deletes do not update the timestamp column', whyWrong: 'Close, but the deeper issue is that the row is gone entirely. There is nothing left to carry a timestamp.' },
+        { id: 'c', text: 'Deletes happen in a separate transaction', whyWrong: 'Not the mechanism.' },
+        { id: 'd', text: 'The watermark advances too quickly', whyWrong: 'A different failure that causes missed updates, not missed deletes.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.idempotency.key',
+    mode: 'drill',
+    nodeIds: ['data.idempotency'],
+    difficulty: 'core',
+    explanation:
+      'An idempotency key must be derived from the business event, not from the delivery attempt. Message ids change on redelivery; a natural key built from the source system and its record identifier survives retries, replays and backfills alike.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'What makes a good idempotency key for ledger writes driven by a message queue?',
+      choices: [
+        { id: 'a', text: 'A natural key from the business event, such as source system plus source record id' },
+        { id: 'b', text: 'The message id assigned by the queue', whyWrong: 'Redelivery and replay produce new message ids for the same business event.' },
+        { id: 'c', text: 'A hash of the full payload', whyWrong: 'Breaks if any non-semantic field changes, such as an enrichment timestamp.' },
+        { id: 'd', text: 'The ingestion timestamp', whyWrong: 'Different on every attempt by construction.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.connectors.limits',
+    mode: 'drill',
+    nodeIds: ['data.connectors', 'data.rate_limits'],
+    difficulty: 'deep',
+    explanation:
+      'Enterprise SaaS quotas are usually per org, not per integration, so your backfill competes with the customer’s own business processes. Running it off-hours with a concurrency cap is basic courtesy and also the difference between a smooth integration and an angry email from their operations lead.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You need to backfill two years of records from the customer’s CRM. What do you agree before starting?',
+      choices: [
+        { id: 'a', text: 'A window and a concurrency cap, since the API quota is shared with their own business processes' },
+        { id: 'b', text: 'That they raise your integration user’s quota', whyWrong: 'Often not separable: the ceiling is usually per org.' },
+        { id: 'c', text: 'Nothing; retry on 429 and let it take as long as it takes', whyWrong: 'You would be consuming their quota all day and degrading their operations.' },
+        { id: 'd', text: 'A database export instead', whyWrong: 'Reasonable to ask and usually refused for a SaaS system they do not host.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.stream.justify',
+    mode: 'drill',
+    nodeIds: ['data.batch_stream', 'del.discovery_scope'],
+    difficulty: 'core',
+    explanation:
+      'Streaming has a real, permanent operational cost, so it needs a consumer that genuinely acts on fresher data. "Real-time" in a brief is usually an aspiration nobody has traced to a decision, and tracing it is often the single most valuable thing you do in discovery.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'The brief says "real-time". What is the question that settles whether you actually need streaming?',
+      choices: [
+        { id: 'a', text: '"What decision or notification changes if this data is 30 seconds old instead of 30 minutes?"' },
+        { id: 'b', text: '"What latency do you need?"', whyWrong: 'Invites a number pulled from the air. Ask what consumes it instead.' },
+        { id: 'c', text: '"Do you have Kafka?"', whyWrong: 'A solution-space question that skips whether streaming is warranted.' },
+        { id: 'd', text: '"What is your data volume?"', whyWrong: 'Sizing, not justification.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.backpressure',
+    mode: 'drill',
+    nodeIds: ['data.rate_limits', 'data.batch_stream'],
+    difficulty: 'edge',
+    explanation:
+      'An unbounded in-memory buffer converts a downstream slowdown into an out-of-memory crash, which loses everything buffered. A bounded queue that pushes back is less convenient and degrades predictably, which is what you want at 3am.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Your consumer buffers in memory when the downstream API slows down. What is wrong with that?',
+      choices: [
+        { id: 'a', text: 'An unbounded buffer turns a slowdown into an OOM crash, losing everything buffered' },
+        { id: 'b', text: 'It increases latency', whyWrong: 'True and the least of the problems.' },
+        { id: 'c', text: 'It uses more CPU', whyWrong: 'Marginal and not the failure mode.' },
+        { id: 'd', text: 'Messages arrive out of order', whyWrong: 'A buffer preserves order; it is the crash that loses data.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.encoding',
+    mode: 'drill',
+    nodeIds: ['data.messy'],
+    difficulty: 'core',
+    explanation:
+      'Mixed encodings in one feed are normal when several upstream systems export independently. Detecting per file and recording what was detected beats assuming UTF-8 and silently producing replacement characters that nobody notices until a customer name appears mangled on an invoice.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Some files in a feed are UTF-8 and some are Windows-1252. What do you do?',
+      choices: [
+        { id: 'a', text: 'Detect per file, record what was detected, and alert when detection is low-confidence' },
+        { id: 'b', text: 'Assume UTF-8 and replace invalid bytes', whyWrong: 'Silently corrupts names and addresses. Discovered months later on a printed document.' },
+        { id: 'c', text: 'Ask the customer to standardise before you start', whyWrong: 'Correct in principle, and it will take longer than your engagement.' },
+        { id: 'd', text: 'Strip non-ASCII characters', whyWrong: 'Destroys data, and will mangle a large fraction of European names.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 'd.replay.safety',
+    mode: 'drill',
+    nodeIds: ['data.idempotency', 'data.cdc'],
+    difficulty: 'deep',
+    explanation:
+      'The question worth asking before you need it is whether the pipeline can be replayed from any point without double-counting. Designing for that up front turns an incident recovery from a research project into a documented procedure.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'multi',
+      stem: 'What makes a pipeline safely replayable? Pick all that apply.',
+      choices: [
+        { id: 'a', text: 'Writes are idempotent on a stable business key' },
+        { id: 'b', text: 'Source data is retained long enough to re-read the window' },
+        { id: 'c', text: 'Derived aggregates are recomputed rather than incremented' },
+        { id: 'd', text: 'The pipeline sends notifications as a side effect of processing', whyWrong: 'A replay would re-notify every customer. Side effects must be separated from computation to be replay-safe.' },
+        { id: 'e', text: 'Each run assigns new surrogate keys', whyWrong: 'Guarantees duplicates on replay, since the same record gets a new identity each time.' },
+      ],
+      correctIds: ['a', 'b', 'c'],
+    },
+  },
+
+  // ── Security & Compliance ────────────────────────────────────────────────
+  {
+    id: 's.hipaa.baa',
+    mode: 'drill',
+    nodeIds: ['sec.hipaa'],
+    difficulty: 'core',
+    explanation:
+      'A BAA covers a specific list of services, not the whole provider. Using a service outside that list for PHI is a breach regardless of how the rest of the architecture looks, and checking the covered-services list is a ten-minute task that occasionally reshapes an entire design.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A healthcare customer has a BAA with the cloud provider. What must you still verify per service?',
+      choices: [
+        { id: 'a', text: 'That each specific service you plan to use appears on the covered-services list' },
+        { id: 'b', text: 'That the region is in the United States', whyWrong: 'Not a HIPAA requirement in itself; residency and HIPAA are separate concerns.' },
+        { id: 'c', text: 'That CMEK is enabled', whyWrong: 'Good practice and not what a BAA turns on.' },
+        { id: 'd', text: 'That the BAA is renewed annually', whyWrong: 'Contract administration, not an architectural check.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.hipaa.minimum',
+    mode: 'drill',
+    nodeIds: ['sec.hipaa', 'sec.pii'],
+    difficulty: 'deep',
+    explanation:
+      'Minimum necessary means an assistant should retrieve only the PHI required for the task at hand. Indexing an entire chart so the model "has context" is the design that fails review, and it is also the design that produces the permission-bleed incident.',
+    citations: cite('genaiSecurity'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A clinical assistant answers questions about a patient’s current medication. What does minimum necessary imply?',
+      choices: [
+        { id: 'a', text: 'Retrieve the medication-relevant records for that encounter, not the full chart' },
+        { id: 'b', text: 'Index the whole chart so the model has full context', whyWrong: 'Exactly the design that fails a HIPAA review, and it degrades retrieval quality besides.' },
+        { id: 'c', text: 'De-identify everything before indexing', whyWrong: 'Would make patient-specific answers impossible. This is a clinical tool, not analytics.' },
+        { id: 'd', text: 'Restrict to clinicians and index everything', whyWrong: 'Role restriction is not the same as minimum necessary; both are required.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.eu_ai_act.tier',
+    mode: 'drill',
+    nodeIds: ['sec.eu_ai_act'],
+    difficulty: 'deep',
+    explanation:
+      'The EU AI Act classifies by use, not by technology. The same model is low-risk summarizing documents and high-risk making or materially informing decisions about people. That distinction is exactly where scope creep becomes a compliance event, which is why an FDE has to hear it in the request.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Which change most likely moves a system into a higher EU AI Act risk tier?',
+      choices: [
+        { id: 'a', text: 'Going from summarizing CVs to ranking candidates for hiring decisions' },
+        { id: 'b', text: 'Switching to a larger model', whyWrong: 'Classification follows use, not model capability.' },
+        { id: 'c', text: 'Adding more training data', whyWrong: 'Does not change the intended purpose.' },
+        { id: 'd', text: 'Deploying to more users in the same use case', whyWrong: 'Scale alone does not move the tier.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.tenancy.models',
+    mode: 'drill',
+    nodeIds: ['sec.tenancy', 'del.tco'],
+    difficulty: 'deep',
+    explanation:
+      'Tenancy is a trade between blast radius and unit economics. Shared infrastructure is cheapest and has the widest blast radius; a dedicated project per tenant is the opposite. Regulated customers frequently pay for isolation, and knowing which model you are selling is a scoping decision, not a deployment detail.',
+    diagramId: 'tenancy-models',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'match',
+      stem: 'Match each tenancy model to its defining trade-off.',
+      pairs: [
+        { left: 'Shared infrastructure, row-level isolation', right: 'Cheapest, widest blast radius' },
+        { left: 'Dedicated project per tenant', right: 'Strong isolation, higher unit cost' },
+        { left: 'Customer’s own cloud account', right: 'Their perimeter, hardest to operate' },
+        { left: 'Shared compute, per-tenant encryption keys', right: 'Middle ground, key custody per tenant' },
+      ],
+    },
+  },
+  {
+    id: 's.fedramp.timeline',
+    mode: 'drill',
+    nodeIds: ['sec.fedramp', 'cust.expectations'],
+    difficulty: 'deep',
+    explanation:
+      'For public sector work the honest answer is usually about the authorisation boundary and the timeline, not the technology. Saying so early loses you nothing and saves a procurement cycle; implying you can be authorised quickly is a promise that will be checked.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A federal agency asks whether your product can be deployed for them. What is the honest first answer?',
+      choices: [
+        { id: 'a', text: 'Ask what authorisation level they require and be candid about where you are and how long the path takes' },
+        { id: 'b', text: '"Yes, we run on FedRAMP-authorised infrastructure"', whyWrong: 'The platform’s authorisation is not yours. This is a common and quickly-exposed overclaim.' },
+        { id: 'c', text: '"Yes, we can meet any requirement"', whyWrong: 'A promise about a process with a multi-year timeline.' },
+        { id: 'd', text: '"No, we do not serve public sector"', whyWrong: 'Closes a door before understanding what they actually need.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.gdpr.basis',
+    mode: 'drill',
+    nodeIds: ['sec.gdpr'],
+    difficulty: 'deep',
+    explanation:
+      'Consent is one lawful basis among several, and it is often the weakest choice for an employment or contractual context because it can be withdrawn and is hard to argue is freely given. Asking which basis applies, rather than assuming consent, is what a DPO expects from a competent partner.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A customer wants to process employee data through an assistant. Their plan is to collect consent. What do you raise?',
+      choices: [
+        { id: 'a', text: 'That consent is a poor basis in an employment relationship, and their DPO should confirm which basis actually applies' },
+        { id: 'b', text: 'Nothing: consent is the safest basis', whyWrong: 'It is often the weakest, precisely because it is withdrawable and hard to argue is freely given by an employee.' },
+        { id: 'c', text: 'That they need consent from each employee annually', whyWrong: 'Invents a requirement and reinforces the wrong basis.' },
+        { id: 'd', text: 'That GDPR does not apply to employee data', whyWrong: 'It plainly does.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.questionnaire.unknown',
+    mode: 'drill',
+    nodeIds: ['sec.soc2', 'cust.bad_news'],
+    difficulty: 'core',
+    explanation:
+      'Security questionnaires are read by people who compare your answers against your architecture. One confident wrong answer costs more credibility than ten honest "not yet, here is the compensating control" answers, and the honest ones are usually accepted.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A 300-row security questionnaire contains twelve controls you do not have. What do you do?',
+      choices: [
+        { id: 'a', text: 'Answer no, name the compensating control and the roadmap date for each' },
+        { id: 'b', text: 'Answer yes where you plan to have it by go-live', whyWrong: 'A false statement in a document their auditors will hold you to.' },
+        { id: 'c', text: 'Leave them blank', whyWrong: 'Reads as evasion and stalls the review while someone chases you.' },
+        { id: 'd', text: 'Answer "not applicable" to move things along', whyWrong: 'Invites a follow-up that exposes the answer as untrue.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.residency.metadata',
+    mode: 'drill',
+    nodeIds: ['sec.residency', 'ai.observability'],
+    difficulty: 'edge',
+    explanation:
+      'Residency is usually scoped carefully for the primary data path and then leaked through the side channels: logs shipped to a central region, traces to a vendor, metrics to a SaaS dashboard. Those are the paths that fail an audit, because nobody drew them on the architecture diagram.',
+    citations: cite('genaiSecurity'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'multi',
+      stem: 'A customer requires EU-only. Which paths commonly leak data out and get missed? Pick all that apply.',
+      choices: [
+        { id: 'a', text: 'Application logs shipped to a central non-EU project' },
+        { id: 'b', text: 'Traces sent to a third-party observability SaaS' },
+        { id: 'c', text: 'Error reporting that includes request payloads' },
+        { id: 'd', text: 'Encrypted backups within the same EU region', whyWrong: 'Same region, so no transfer occurs.' },
+        { id: 'e', text: 'The primary database, once pinned to an EU region', whyWrong: 'This is the path everyone remembers to check. It is the side channels that fail audits.' },
+      ],
+      correctIds: ['a', 'b', 'c'],
+    },
+  },
+  {
+    id: 's.pii.deident',
+    mode: 'drill',
+    nodeIds: ['sec.pii'],
+    difficulty: 'edge',
+    explanation:
+      'Removing direct identifiers is not the same as making a record non-identifying. Quasi-identifiers, postcode, date of birth, a rare diagnosis, combine to single people out, which is why re-identification risk has to be assessed rather than assumed away by deleting a name column.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'A customer removed names and IDs from a dataset and calls it anonymised. What is your concern?',
+      choices: [
+        { id: 'a', text: 'Quasi-identifiers such as postcode, date of birth and rare conditions can still single individuals out' },
+        { id: 'b', text: 'The data is now less useful', whyWrong: 'True and a different concern from whether it is actually anonymous.' },
+        { id: 'c', text: 'They should have encrypted it instead', whyWrong: 'Encryption protects at rest; it does not make a record non-identifying to anyone who can read it.' },
+        { id: 'd', text: 'Nothing: removing identifiers is sufficient', whyWrong: 'The assumption behind most published re-identification results.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.zero_trust.service',
+    mode: 'drill',
+    nodeIds: ['sec.zero_trust', 'gcp.iam'],
+    difficulty: 'core',
+    explanation:
+      'A service account per workload with only the roles that workload needs is the whole of least privilege in practice. One shared account across services means a compromise anywhere reaches everything, and the audit log cannot tell you which service did what.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'Six services share one service account "because it is simpler". What is the strongest argument to change it?',
+      choices: [
+        { id: 'a', text: 'A compromise of any one service reaches all six, and the audit log cannot attribute actions to a service' },
+        { id: 'b', text: 'It makes IAM policies longer', whyWrong: 'A cosmetic objection that will not persuade anyone under deadline pressure.' },
+        { id: 'c', text: 'It is against best practice', whyWrong: 'An appeal to authority. Name the concrete consequence instead.' },
+        { id: 'd', text: 'Quotas are per service account', whyWrong: 'Sometimes true and a secondary concern.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.audit.evidence',
+    mode: 'drill',
+    nodeIds: ['sec.audit', 'del.handover'],
+    difficulty: 'core',
+    explanation:
+      'Evidence a customer can generate themselves outlives your engagement. A dashboard or query they own answers the auditor next year; a report you exported answers it once, and then they have to call you.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'The customer will face an audit six months after you leave. What do you build for them?',
+      choices: [
+        { id: 'a', text: 'A saved query or dashboard they own and can re-run themselves' },
+        { id: 'b', text: 'A comprehensive PDF report at handover', whyWrong: 'A snapshot that is out of date within a week and cannot be regenerated without you.' },
+        { id: 'c', text: 'An offer to help when the audit comes', whyWrong: 'Creates a dependency and may not be honoured by whoever holds the account then.' },
+        { id: 'd', text: 'Documentation of where the logs live', whyWrong: 'Necessary and leaves the actual work to someone under audit pressure.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.soc2.scope',
+    mode: 'drill',
+    nodeIds: ['sec.soc2', 'sec.tenancy'],
+    difficulty: 'edge',
+    explanation:
+      'A SOC 2 report covers a defined system boundary. A customer asking "are you SOC 2?" usually means "is the thing I am buying inside the boundary?", and a new deployment model or a new region frequently is not. Knowing your own scope is what makes that answer credible.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'mcq',
+      stem: 'You hold SOC 2 Type II for your SaaS. A customer wants the product deployed into their own cloud account. What is true?',
+      choices: [
+        { id: 'a', text: 'That deployment model is likely outside the report’s system boundary and you must say so' },
+        { id: 'b', text: 'The report covers the software wherever it runs', whyWrong: 'A report covers a system and the controls operating around it, not a binary.' },
+        { id: 'c', text: 'It automatically covers the customer’s account too', whyWrong: 'Their environment is their control responsibility.' },
+        { id: 'd', text: 'You need a new report before you can discuss it', whyWrong: 'You can discuss it honestly today; the scope gap is the thing to name.' },
+      ],
+      correctId: 'a',
+    },
+  },
+  {
+    id: 's.breach.first',
+    mode: 'drill',
+    nodeIds: ['sec.audit', 'cust.bad_news'],
+    difficulty: 'edge',
+    explanation:
+      'Regulatory clocks start early and the customer must be told before they hear it elsewhere. Containment and notification run in parallel, waiting until you fully understand the incident is how a security event becomes a trust event and, in several regimes, a fine.',
+    citations: cite('waf'),
+    origin: 'seed',
+    criticScore: null,
+    payload: {
+      kind: 'order',
+      stem: 'You discover your integration logged customer PHI to a non-compliant store. Order your first actions.',
+      steps: [
+        'Stop the logging path so no further data is written',
+        'Notify your customer contact and their privacy officer, before they hear it elsewhere',
+        'Scope what was written, when it started, and who could have accessed it',
+        'Purge the data and document the remediation for their breach record',
+      ],
+    },
+  },
+];
