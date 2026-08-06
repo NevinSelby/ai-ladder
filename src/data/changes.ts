@@ -1,51 +1,70 @@
-import { desc, gte } from 'drizzle-orm';
+import { isTrustedSource } from '@shared/sources-trust';
 
-import type { Database } from '@/db/client';
-import { contentItems } from '@/db/schema';
-import { TAXONOMY_BY_ID } from '@shared/taxonomy';
+import { supabase } from '@/lib/supabase';
 
 /**
  * What changed this week.
  *
- * Reads the content bank's own `updatedAt` cursor, which the nightly pipeline
- * stamps when it publishes. Until that pipeline is deployed this reports the
- * bundled seed refresh, which is honest: something did change, and it was a
- * release rather than a source update.
+ * Reads the ingested vendor release notes rather than the local content
+ * bank's timestamps. An earlier version reported items whose `updatedAt`
+ * looked recent, which on a fresh device meant the entire bundle: that
+ * measured when the phone first saw an item, not when anything changed.
  *
- * The point is a reason to open the app that is not the streak. A curriculum
- * that visibly moves is worth checking; one that never changes is a PDF.
+ * These are the actual feeds the nightly job pulls, each with its official
+ * URL, so the claim that the curriculum tracks vendor releases is something
+ * the reader can check rather than something the app asserts.
  */
-export interface ContentChange {
+
+export interface ReleaseNote {
   id: string;
-  mode: string;
-  topics: string[];
-  updatedAt: string;
-  origin: string;
+  title: string;
+  url: string;
+  vendor: 'Google Cloud' | 'AWS' | 'Azure';
+  publishedAt: string | null;
 }
 
-export async function recentChanges(
-  db: Database,
+const VENDOR: Record<string, ReleaseNote['vendor']> = {
+  gcp_release_notes: 'Google Cloud',
+  gcp_vertex_release_notes: 'Google Cloud',
+  aws_whats_new: 'AWS',
+  azure_updates: 'Azure',
+};
+
+export async function recentReleaseNotes(
   withinDays = 7,
-  limit = 8
-): Promise<{ items: ContentChange[]; total: number; since: string }> {
+  limit = 6
+): Promise<{ notes: ReleaseNote[]; total: number }> {
+  if (!supabase) return { notes: [], total: 0 };
+
   const since = new Date(Date.now() - withinDays * 86_400_000).toISOString();
+  const { data, error } = await supabase
+    .from('source_documents')
+    .select('id, title, url, source_key, published_at')
+    .gte('published_at', since)
+    .order('published_at', { ascending: false })
+    .limit(60);
 
-  const rows = await db
-    .select()
-    .from(contentItems)
-    .where(gte(contentItems.updatedAt, since))
-    .orderBy(desc(contentItems.updatedAt))
-    .limit(200);
+  if (error || !data) return { notes: [], total: 0 };
 
-  const items = rows.slice(0, limit).map((row) => ({
-    id: row.id,
-    mode: row.mode,
-    topics: (row.nodeIds ?? [])
-      .map((nodeId) => TAXONOMY_BY_ID[nodeId]?.label)
-      .filter((label): label is string => Boolean(label)),
-    updatedAt: row.updatedAt,
-    origin: row.origin,
-  }));
+  const seen = new Set<string>();
+  const notes: ReleaseNote[] = [];
 
-  return { items, total: rows.length, since };
+  for (const row of data) {
+    // The feeds repeat headlines across days, and a list showing the same
+    // title three times reads as a bug even when the rows are distinct.
+    const key = row.title.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    if (!isTrustedSource(row.url)) continue;
+    seen.add(key);
+
+    notes.push({
+      id: row.id,
+      title: row.title,
+      url: row.url,
+      vendor: VENDOR[row.source_key] ?? 'Google Cloud',
+      publishedAt: row.published_at,
+    });
+  }
+
+  return { notes: notes.slice(0, limit), total: seen.size };
 }

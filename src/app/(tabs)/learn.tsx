@@ -4,11 +4,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 
-import { IconArrowRight, IconCheck, IconLearn } from '@/components/icons';
+import { IconArrowRight, IconCheck, IconLearn, IconLink } from '@/components/icons';
+import * as Linking from 'expo-linking';
 import { Breathe } from '@/components/ambient';
 import { Bar, Card, Chip, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { lessonStats, readLessons, type LessonWithState } from '@/data/learning';
-import { recentChanges } from '@/data/changes';
+import { recentReleaseNotes } from '@/data/changes';
 import { db } from '@/db';
 import { useRefreshAppState } from '@/hooks/use-app-state';
 import { meterColor, motion, radius, space, useScheme, useTheme } from '@/theme';
@@ -57,10 +58,12 @@ export default function LearnScreen() {
     );
   }, [lessons, filter]);
 
-  const { data: changes = { items: [], total: 0, since: '' } } = useQuery({
-    queryKey: ['app-state', 'recent-changes'],
-    queryFn: () => recentChanges(db),
-    placeholderData: { items: [], total: 0, since: '' },
+  const { data: changes = { notes: [], total: 0 } } = useQuery({
+    queryKey: ['app-state', 'release-notes'],
+    queryFn: () => recentReleaseNotes(),
+    placeholderData: { notes: [], total: 0 },
+    // Vendor feeds move daily, not by the minute.
+    staleTime: 60 * 60 * 1000,
   });
 
   const nextUp = lessons.find((lesson) => !lesson.completedAt);
@@ -99,28 +102,48 @@ export default function LearnScreen() {
       <Spacer size={space.lg} />
 
       {/* ── What changed ── */}
-      {changes.total > 0 ? (
+      {changes.notes.length > 0 ? (
         <>
           <Animated.View entering={FadeInDown.duration(motion.slow).delay(40)}>
             <Card accent={theme.positive}>
-              <Stack gap={space.sm}>
+              <Stack gap={space.md}>
                 <Row justify="space-between" align="baseline">
                   <Eyebrow tone="positive">Changed this week</Eyebrow>
                   <Text variant="caption" tone="textFaint">
-                    {changes.total} item{changes.total === 1 ? '' : 's'}
+                    {changes.total} release note{changes.total === 1 ? '' : 's'}
                   </Text>
                 </Row>
-                {changes.items.slice(0, 3).map((change) => (
-                  <Row key={change.id} gap={space.sm} align="center">
-                    <Chip label={change.mode} color={theme.textFaint} />
-                    <Text variant="caption" tone="textMuted" numberOfLines={1} style={{ flex: 1 }}>
-                      {change.topics[0] ?? 'General'}
-                    </Text>
-                  </Row>
+
+                {changes.notes.map((note) => (
+                  <Pressable
+                    key={note.id}
+                    accessibilityRole="link"
+                    accessibilityLabel={`${note.title}, opens ${note.vendor} documentation`}
+                    onPress={() => Linking.openURL(note.url).catch(() => {})}>
+                    <Row gap={space.sm} align="flex-start">
+                      <Chip label={note.vendor} color={theme.textFaint} />
+                      <Stack gap={1} style={{ flex: 1 }}>
+                        <Text variant="caption" numberOfLines={2}>
+                          {note.title}
+                        </Text>
+                        {note.publishedAt ? (
+                          <Text variant="caption" tone="textFaint">
+                            {new Date(note.publishedAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </Text>
+                        ) : null}
+                      </Stack>
+                      <IconLink color={theme.accent} size={13} />
+                    </Row>
+                  </Pressable>
                 ))}
+
                 <Text variant="caption" tone="textFaint">
-                  The curriculum is refreshed against vendor release notes, so a renamed
-                  product or a superseded control shows up here rather than in an interview.
+                  Pulled nightly from the official Google Cloud, AWS and Azure release feeds.
+                  Every line links to the vendor's own page, so a renamed product or a
+                  superseded control shows up here rather than in an interview.
                 </Text>
               </Stack>
             </Card>

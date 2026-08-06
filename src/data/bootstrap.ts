@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 
 import { ACCOUNTS } from '@/content/accounts';
-import { SEED_ITEMS } from '@/content/seed';
+import { SEED_ITEMS, SEED_VERSION } from '@/content/seed';
 import type { Database } from '@/db/client';
 import { accounts, contentItems, itemNodes, profileState } from '@/db/schema';
 
@@ -48,7 +48,7 @@ export async function bootstrapLocalData(db: Database) {
         origin: item.origin,
         criticScore: item.criticScore ?? null,
         verifiedAt: item.verifiedAt ?? null,
-        updatedAt: now,
+        updatedAt: SEED_VERSION,
       })
       .onConflictDoUpdate({
         target: contentItems.id,

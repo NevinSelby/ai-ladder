@@ -38,6 +38,7 @@ import {
   onCooldown,
 } from '../src/data/session';
 import { isSafeHttpUrl, validateSubmission } from '../shared/submissions';
+import { isTrustedSource } from '../shared/sources-trust';
 
 let passed = 0;
 const failures: string[] = [];
@@ -340,6 +341,18 @@ const migrationSql = readdirSync('supabase/migrations')
 for (const mode of MODES) {
   check(`server enum knows the "${mode}" mode`, migrationSql.includes(`'${mode}'`));
 }
+
+// ── Release note link safety ───────────────────────────────────────────────
+// These URLs come from a database row, so what becomes a link is a boundary.
+
+check('vendor docs are linkable', isTrustedSource('https://cloud.google.com/blog/x'));
+check('aws docs are linkable', isTrustedSource('https://aws.amazon.com/about-aws/whats-new/x'));
+check('microsoft docs are linkable', isTrustedSource('https://learn.microsoft.com/en-us/azure/x'));
+check('an unknown host is not linkable', !isTrustedSource('https://evil.example.com/x'));
+check('a lookalike host is not linkable', !isTrustedSource('https://cloud.google.com.evil.tld/x'));
+check('plain http is not linkable', !isTrustedSource('http://cloud.google.com/x'));
+check('javascript is not linkable', !isTrustedSource('javascript:alert(1)'));
+check('garbage is not linkable', !isTrustedSource('not a url'));
 
 // ── Report ─────────────────────────────────────────────────────────────────
 

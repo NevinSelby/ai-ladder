@@ -26,6 +26,16 @@ import { DRILL_FOUNDATIONS } from './drill-foundations';
 import { DRILL_SCALE_PROD } from './drill-scale-prod';
 import { ROOM_SEED } from './room';
 
+/**
+ * When this bundled bank was last edited.
+ *
+ * Seed rows were previously stamped with the install time, so on a fresh
+ * device every item looked like it had "changed this week" and the freshness
+ * card reported the whole bank. Bump this when the seed content changes; it is
+ * the bundle's version, not the device's clock.
+ */
+export const SEED_VERSION = '2026-08-06T00:00:00.000Z';
+
 export const SEED_ITEMS: ContentItem[] = [
   ...DRILL_SEED,
   ...DRILL_FOUNDATIONS,
