@@ -20,7 +20,8 @@ import { MeterRadar } from '@/components/meters';
 import { Button, Card, Chip, Divider, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { attemptSummary } from '@/data/attempts';
 import { lessonStats, recentDays, streakSummary, type DayRecord } from '@/data/learning';
-import { nodeStrengths } from '@/data/session';
+import { leeches, nodeStrengths, resumeLeech } from '@/data/session';
+import { retentionForecast } from '@/data/retention';
 import { fetchLeaderboard, type LeaderboardRow } from '@/data/leaderboard';
 import { useAuthSession } from '@/hooks/use-auth';
 import { db } from '@/db';
@@ -84,6 +85,16 @@ export default function ProgressScreen() {
     queryKey: ['app-state', 'lesson-stats'],
     queryFn: () => lessonStats(db),
     placeholderData: { total: 0, completed: 0, secondsSpent: 0, byBranch: [] },
+  });
+  const { data: forecast = { points: [], tracked: 0, atRisk: 0 } } = useQuery({
+    queryKey: ['app-state', 'retention'],
+    queryFn: () => retentionForecast(db),
+    placeholderData: { points: [], tracked: 0, atRisk: 0 },
+  });
+  const { data: paused = [] } = useQuery({
+    queryKey: ['app-state', 'leeches'],
+    queryFn: () => leeches(db),
+    placeholderData: [],
   });
   const { data: strengths = { weakest: [], strongest: [], rated: 0 } } = useQuery({
     queryKey: ['app-state', 'node-strengths'],
@@ -349,6 +360,88 @@ export default function ProgressScreen() {
       </Animated.View>
 
       <Spacer size={space.md} />
+
+      {/* ── Predicted retention ── */}
+      {forecast.points.length > 0 ? (
+        <Animated.View entering={FadeInDown.duration(motion.slow).delay(285)}>
+          <Card>
+            <Stack gap={space.md}>
+              <Row justify="space-between" align="baseline">
+                <Eyebrow>Predicted recall</Eyebrow>
+                <Text variant="caption" tone="textFaint">
+                  next 30 days
+                </Text>
+              </Row>
+              <Sparkline
+                values={forecast.points.map((point) => Math.round(point.retention * 100))}
+                labels={forecast.points.map((point) =>
+                  point.day === 0 ? 'today' : `in ${point.day} day${point.day === 1 ? '' : 's'}`
+                )}
+                width={cardInner}
+                unit="%"
+                color={theme.positive}
+              />
+              <Text variant="caption" tone="textFaint">
+                Average chance you would recall a tracked concept if asked that day, with no
+                further practice. {forecast.tracked} concept
+                {forecast.tracked === 1 ? '' : 's'} tracked
+                {forecast.atRisk > 0
+                  ? `, ${forecast.atRisk} slipping below the target within a week.`
+                  : '.'}
+              </Text>
+            </Stack>
+          </Card>
+        </Animated.View>
+      ) : null}
+
+      {forecast.points.length > 0 ? <Spacer size={space.md} /> : null}
+
+      {/* ── Paused concepts ── */}
+      {paused.length > 0 ? (
+        <Animated.View entering={FadeInDown.duration(motion.slow).delay(290)}>
+          <Card accent={theme.warning}>
+            <Stack gap={space.md}>
+              <Row justify="space-between" align="baseline">
+                <Eyebrow tone="warning">Paused</Eyebrow>
+                <Text variant="caption" tone="textFaint">
+                  {paused.length} concept{paused.length === 1 ? '' : 's'}
+                </Text>
+              </Row>
+              <Text variant="caption" tone="textFaint">
+                These were missed enough times that asking again was not teaching anything.
+                Read the lesson, then put one back into rotation.
+              </Text>
+              {paused.map((leech) => (
+                <Row key={leech.nodeId} justify="space-between" align="center">
+                  <Pressable
+                    style={{ flex: 1, paddingRight: space.md }}
+                    onPress={() =>
+                      router.push({ pathname: '/topic/[id]', params: { id: leech.nodeId } })
+                    }>
+                    <Text variant="small" numberOfLines={1}>
+                      {leech.node.label}
+                    </Text>
+                    <Text variant="caption" tone="textFaint">
+                      missed {leech.lapses} times
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Resume ${leech.node.label}`}
+                    onPress={async () => {
+                      await resumeLeech(db, leech.nodeId);
+                      refresh();
+                    }}>
+                    <Chip label="resume" color={theme.accent} filled />
+                  </Pressable>
+                </Row>
+              ))}
+            </Stack>
+          </Card>
+        </Animated.View>
+      ) : null}
+
+      {paused.length > 0 ? <Spacer size={space.md} /> : null}
 
       {/* ── Theory coverage ── */}
       <Animated.View entering={FadeInDown.duration(motion.slow).delay(300)}>

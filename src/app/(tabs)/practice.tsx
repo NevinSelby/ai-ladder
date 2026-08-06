@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 import {
   IconArrowRight,
   IconBoard,
+  IconEye,
   IconGem,
   IconLadder,
   IconLearn,
@@ -26,9 +27,9 @@ import { MODES, MODE_META, type Mode } from '@shared/content';
 import { drillMinutes } from '@shared/progression';
 import { sql } from 'drizzle-orm';
 
-const LIVE: Mode[] = ['drill', 'arena'];
+const LIVE: Mode[] = ['drill', 'arena', 'flaw'];
 
-/** One icon per mode. A list of nine text blocks is a wall; nine marks is a menu. */
+/** One icon per mode. A list of ten text blocks is a wall; ten marks is a menu. */
 const MODE_ICON: Record<Mode, typeof IconToday> = {
   drill: IconToday,
   decompose: IconQuest,
@@ -39,6 +40,39 @@ const MODE_ICON: Record<Mode, typeof IconToday> = {
   blueprint: IconLadder,
   evallab: IconProgress,
   discovery: IconLearn,
+  flaw: IconEye,
+};
+
+/**
+ * Modes grouped by what they train.
+ *
+ * Ten modes in one flat list is a wall of choices, and a wall of choices reads
+ * as work. Three short groups with a sentence each say what kind of practice
+ * you are about to do, which is the actual decision being made.
+ */
+const GROUPS: { title: string; blurb: string; modes: Mode[] }[] = [
+  {
+    title: 'Daily',
+    blurb: 'Short, repeatable, and the ones that carry your streak.',
+    modes: ['drill', 'arena', 'flaw'],
+  },
+  {
+    title: 'Judgment',
+    blurb: 'Longer rounds that score how you think, not what you recall.',
+    modes: ['decompose', 'room', 'discovery'],
+  },
+  {
+    title: 'Depth',
+    blurb: 'Specialist drills for the parts of the job that bite hardest.',
+    modes: ['napkin', 'incident', 'blueprint', 'evallab'],
+  },
+];
+
+/** Where each mode's runner lives. Unlisted modes are not yet playable. */
+const ROUTE: Partial<Record<Mode, string>> = {
+  drill: '/session/drill',
+  arena: '/session/arena',
+  flaw: '/session/flaw',
 };
 
 export default function PracticeScreen() {
@@ -57,11 +91,6 @@ export default function PracticeScreen() {
     placeholderData: {},
   });
 
-  const ordered = [...MODES].sort((a, b) => {
-    const liveDelta = Number(LIVE.includes(b)) - Number(LIVE.includes(a));
-    if (liveDelta !== 0) return liveDelta;
-    return MODE_META[a].phase - MODE_META[b].phase;
-  });
 
   return (
     <Screen>
@@ -76,55 +105,67 @@ export default function PracticeScreen() {
 
       <Spacer size={space.xl} />
 
-      <Stack gap={space.md}>
-        {ordered.map((mode) => {
-          const meta = MODE_META[mode];
-          const live = LIVE.includes(mode);
-          const authored = counts[mode] ?? 0;
+      <Stack gap={space.xxl}>
+        {GROUPS.map((group) => (
+          <Stack key={group.title} gap={space.md}>
+            <Stack gap={2}>
+              <Eyebrow>{group.title}</Eyebrow>
+              <Text variant="caption" tone="textFaint">
+                {group.blurb}
+              </Text>
+            </Stack>
 
-          return (
-            <Pressable
-              key={mode}
-              disabled={!live}
-              onPress={() => router.push(mode === 'arena' ? '/session/arena' : '/session/drill')}>
-              <Card padded={false}>
-                <View style={{ padding: space.lg, gap: space.sm, opacity: live ? 1 : 0.6 }}>
-                  <Row justify="space-between" align="center">
-                    <Row gap={space.md} align="center">
-                      <ModeMedallion mode={mode} live={live} />
-                      <Row gap={space.sm} align="center">
-                        {!live ? <IconLock color={theme.textFaint} size={15} /> : null}
-                        <Text variant="bodyStrong">{meta.label}</Text>
+            {group.modes.map((mode) => {
+              const meta = MODE_META[mode];
+              const live = LIVE.includes(mode);
+              const authored = counts[mode] ?? 0;
+              const route = ROUTE[mode];
+
+              return (
+                <Pressable
+                  key={mode}
+                  disabled={!live || !route}
+                  onPress={() => route && router.push(route as never)}>
+                  <Card padded={false}>
+                    <View style={{ padding: space.lg, gap: space.sm, opacity: live ? 1 : 0.6 }}>
+                      <Row justify="space-between" align="center">
+                        <Row gap={space.md} align="center">
+                          <ModeMedallion mode={mode} live={live} />
+                          <Row gap={space.sm} align="center">
+                            {!live ? <IconLock color={theme.textFaint} size={15} /> : null}
+                            <Text variant="bodyStrong">{meta.label}</Text>
+                          </Row>
+                        </Row>
+                        <Row gap={space.xs} align="center">
+                          <Chip
+                            label={`${mode === 'drill' ? drillMinutes(profile.dailyGoal) : meta.minutes} min`}
+                            color={theme.textFaint}
+                          />
+                          {live ? (
+                            <IconArrowRight color={theme.accent} size={17} />
+                          ) : (
+                            <Chip label="soon" color={theme.textFaint} />
+                          )}
+                        </Row>
                       </Row>
-                    </Row>
-                    <Row gap={space.xs} align="center">
-                      <Chip
-                        label={`${mode === 'drill' ? drillMinutes(profile.dailyGoal) : meta.minutes} min`}
-                        color={theme.textFaint}
-                      />
-                      {live ? (
-                        <IconArrowRight color={theme.accent} size={17} />
-                      ) : (
-                        <Chip label="soon" color={theme.textFaint} />
-                      )}
-                    </Row>
-                  </Row>
 
-                  <Text variant="small" tone="textMuted">
-                    {meta.tagline}
-                  </Text>
+                      <Text variant="small" tone="textMuted">
+                        {meta.tagline}
+                      </Text>
 
-                  {authored > 0 ? (
-                    <Text variant="caption" tone="textFaint">
-                      {authored} scenario{authored === 1 ? '' : 's'} written
-                      {live ? '' : ' · runner in progress'}
-                    </Text>
-                  ) : null}
-                </View>
-              </Card>
-            </Pressable>
-          );
-        })}
+                      {authored > 0 ? (
+                        <Text variant="caption" tone="textFaint">
+                          {authored} scenario{authored === 1 ? '' : 's'} written
+                          {live ? '' : ' · runner in progress'}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </Card>
+                </Pressable>
+              );
+            })}
+          </Stack>
+        ))}
       </Stack>
 
       <Spacer size={space.lg} />

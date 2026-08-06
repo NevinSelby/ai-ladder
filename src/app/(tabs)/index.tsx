@@ -10,7 +10,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { IconArrowRight, IconCheck, IconFlame, IconGem, IconQuest, IconUser } from '@/components/icons';
+import { IconArrowRight,
+  IconEye, IconCheck, IconFlame, IconGem, IconQuest, IconUser } from '@/components/icons';
 import { Wordmark } from '@/components/logo';
 import { Tappable } from '@/components/tappable';
 import { StreakFlame } from '@/components/streak-flame';
@@ -18,6 +19,7 @@ import { MeterList } from '@/components/meters';
 import { Bar, Button, Card, Chip, Divider, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { ACCOUNTS_BY_ID, healthBand } from '@/content/accounts';
 import { setDailyGoal } from '@/data/profile';
+import { dailyPuzzle } from '@/data/puzzle';
 import { PulseDot } from '@/components/ambient';
 import { Tooltip } from '@/components/tooltip';
 import { refreshQuests, type QuestStatus } from '@/data/quests';
@@ -76,6 +78,12 @@ export default function TodayScreen() {
   const { width } = useWindowDimensions();
   const layout = useLayout();
   const inner = Math.min(width, layout.contentWidth) - space.lg * 2;
+
+  const { data: puzzle } = useQuery({
+    queryKey: ['app-state', 'daily-puzzle'],
+    queryFn: () => dailyPuzzle(db),
+    placeholderData: null,
+  });
 
   const progress = levelProgress(profile.meters);
   const weakestRow = [...board].sort((a, b) => a.health - b.health)[0];
@@ -176,6 +184,42 @@ export default function TodayScreen() {
       </Card>
 
       <Spacer size={space.lg} />
+
+      {/* ── Daily puzzle ── */}
+      {puzzle ? (
+        <>
+          <Spacer size={space.md} />
+          <Pressable onPress={() => router.push({ pathname: '/session/flaw', params: { puzzle: '1' } })}>
+            <Card accent={puzzle.solved ? theme.positive : theme.warning}>
+              <Row gap={space.md} align="center">
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: puzzle.solved ? theme.positiveSoft : theme.warningSoft,
+                  }}>
+                  <IconEye color={puzzle.solved ? theme.positive : theme.warning} size={20} />
+                </View>
+                <Stack gap={2} style={{ flex: 1 }}>
+                  <Eyebrow tone={puzzle.solved ? 'positive' : 'warning'}>
+                    {puzzle.solved ? 'Puzzle solved' : 'Daily puzzle'}
+                  </Eyebrow>
+                  <Text variant="smallStrong">Spot the Flaw</Text>
+                  <Text variant="caption" tone="textFaint">
+                    {puzzle.solved
+                      ? 'Same puzzle for everyone today. Share your result.'
+                      : 'One design, one requirement, one line that breaks it.'}
+                  </Text>
+                </Stack>
+                <IconArrowRight color={theme.accent} size={17} />
+              </Row>
+            </Card>
+          </Pressable>
+        </>
+      ) : null}
 
       {/* ── Daily quests ── */}
       <QuestCard />

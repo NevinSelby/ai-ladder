@@ -25,6 +25,7 @@ export const MODES = [
   'blueprint',
   'evallab',
   'discovery',
+  'flaw',
 ] as const;
 export type Mode = (typeof MODES)[number];
 
@@ -41,6 +42,7 @@ export const MODE_META: Record<
   blueprint: { label: 'Blueprint', tagline: 'Design under real compliance constraints.', minutes: 10, phase: 1 },
   evallab: { label: 'Eval Lab', tagline: 'Prove the AI feature works. Design the harness.', minutes: 8, phase: 1 },
   discovery: { label: 'Discovery Budget', tagline: 'Thirty minutes of meeting. Spend your questions well.', minutes: 5, phase: 1 },
+  flaw: { label: 'Spot the Flaw', tagline: 'A design that looks fine. One line of it is not.', minutes: 4, phase: 0 },
 };
 
 export const DIFFICULTIES = ['intro', 'core', 'deep', 'edge'] as const;
@@ -104,6 +106,28 @@ export const DrillPayloadSchema = z.discriminatedUnion('kind', [
 export type DrillPayload = z.infer<typeof DrillPayloadSchema>;
 
 // ── Trade-off Arena ────────────────────────────────────────────────────────
+
+/**
+ * Spot the flaw.
+ *
+ * A design that looks fine, with exactly one thing in it that fails a stated
+ * requirement. Trains the review instinct rather than the build instinct,
+ * which is what an architecture review or a security questionnaire actually
+ * asks of you.
+ */
+export const FlawPayloadSchema = z.object({
+  /** The requirement the design must satisfy. Stated up front, not hidden. */
+  requirement: z.string().min(15),
+  /** Two sentences of context: who the customer is and what was proposed. */
+  scenario: z.string().min(20),
+  /** Every line of the proposed design, in order. Exactly one is the flaw. */
+  lines: z.array(z.string().min(4)).min(4).max(7),
+  /** Index into `lines` of the line that breaks the requirement. */
+  flawIndex: z.number().int().min(0),
+  /** Why that line fails, and what it should have been. */
+  fix: z.string().min(30),
+});
+export type FlawPayload = z.infer<typeof FlawPayloadSchema>;
 
 export const ArenaPayloadSchema = z.object({
   /** The constraint that makes the choice non-obvious. Two sentences maximum. */
@@ -388,6 +412,7 @@ export const ContentItemSchema = z.discriminatedUnion('mode', [
   BaseItem.extend({ mode: z.literal('blueprint'), payload: BlueprintPayloadSchema }),
   BaseItem.extend({ mode: z.literal('evallab'), payload: EvalLabPayloadSchema }),
   BaseItem.extend({ mode: z.literal('discovery'), payload: DiscoveryPayloadSchema }),
+  BaseItem.extend({ mode: z.literal('flaw'), payload: FlawPayloadSchema }),
 ]);
 
 export type ContentItem = z.infer<typeof ContentItemSchema>;
@@ -396,3 +421,4 @@ export type ArenaItem = Extract<ContentItem, { mode: 'arena' }>;
 export type NapkinItem = Extract<ContentItem, { mode: 'napkin' }>;
 export type DecomposeItem = Extract<ContentItem, { mode: 'decompose' }>;
 export type RoomItem = Extract<ContentItem, { mode: 'room' }>;
+export type FlawItem = Extract<ContentItem, { mode: 'flaw' }>;

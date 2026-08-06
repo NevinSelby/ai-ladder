@@ -31,8 +31,10 @@ import { meterForNodes } from '../shared/taxonomy';
 import {
   CORRECT_COOLDOWN_DAYS,
   WRONG_COOLDOWN_DAYS,
+  matchesCloud,
   onCooldown,
 } from '../src/data/session';
+import { isSafeHttpUrl, validateSubmission } from '../shared/submissions';
 
 let passed = 0;
 const failures: string[] = [];
@@ -189,6 +191,8 @@ const base: Profile = {
   dailyGoal: 'regular',
   displayName: null,
   hapticsEnabled: true,
+  cloudPreference: 'gcp' as const,
+  onboarded: true,
   lastSessionDate: '2026-07-30',
   remoteUserId: null,
 };
@@ -260,6 +264,65 @@ check('a wrong answer 2 days ago returns sooner than a correct one',
     onCooldown({ lastSeen: nowRef.getTime() - 48 * HOUR, lastScore: 1 }, nowRef));
 check('a never-seen item is never on cooldown', !onCooldown(undefined, nowRef));
 check('wrong answers return before correct ones', WRONG_COOLDOWN_DAYS < CORRECT_COOLDOWN_DAYS);
+
+// ── Community submissions ──────────────────────────────────────────────────
+// Validation is a security boundary, not a nicety: these run on untrusted text.
+
+const goodDraft = {
+  stem: 'A customer requires no public endpoints. What do you propose for the API?',
+  choices: [
+    { id: 'a', text: 'Publish it over a private connectivity service' },
+    { id: 'b', text: 'Public endpoint with an IP allowlist', whyWrong: 'Still a public endpoint, which the requirement forbids outright.' },
+    { id: 'c', text: 'Peer the two networks', whyWrong: 'Exposes both networks and needs non-overlapping ranges you do not control.' },
+  ],
+  correctId: 'a',
+  explanation:
+    'An allowlisted public endpoint is still public, and the questionnaire row is binary rather than a matter of degree.',
+  nodeIds: ['gcp.psc'],
+  difficulty: 'core',
+  sourceUrl: 'https://cloud.google.com/vpc/docs/private-service-connect',
+};
+
+check('a complete submission validates', validateSubmission(goodDraft).length === 0);
+check('a short stem is rejected',
+  validateSubmission({ ...goodDraft, stem: 'too short' }).some((p) => p.field === 'stem'));
+check('a missing source is rejected',
+  validateSubmission({ ...goodDraft, sourceUrl: '' }).some((p) => p.field === 'sourceUrl'));
+check('a javascript: source is rejected',
+  validateSubmission({ ...goodDraft, sourceUrl: 'javascript:alert(1)' }).some((p) => p.field === 'sourceUrl'));
+check('a data: source is rejected',
+  validateSubmission({ ...goodDraft, sourceUrl: 'data:text/html,<script>' }).some((p) => p.field === 'sourceUrl'));
+check('plain http is rejected', !isSafeHttpUrl('http://example.com'));
+check('https is accepted', isSafeHttpUrl('https://example.com/a'));
+check('an unknown topic id is rejected',
+  validateSubmission({ ...goodDraft, nodeIds: ['nope.nope'] }).some((p) => p.field === 'nodeIds'));
+check('a distractor without a reason is rejected',
+  validateSubmission({
+    ...goodDraft,
+    choices: [
+      { id: 'a', text: 'Right one' },
+      { id: 'b', text: 'Wrong one' },
+      { id: 'c', text: 'Other wrong one', whyWrong: 'A real reason that is long enough.' },
+    ],
+  }).some((p) => p.field === 'whyWrong'));
+check('an unmarked correct answer is rejected',
+  validateSubmission({ ...goodDraft, correctId: 'z' }).some((p) => p.field === 'correctId'));
+check('an oversized stem is rejected',
+  validateSubmission({ ...goodDraft, stem: 'x'.repeat(500) }).some((p) => p.field === 'stem'));
+
+// ── Cloud filtering ────────────────────────────────────────────────────────
+
+const gcpItem = { nodeIds: ['gcp.psc'] } as never;
+const awsItem = { nodeIds: ['aws.privatelink'] } as never;
+const neutralItem = { nodeIds: ['ai.evals'] } as never;
+
+check('gcp preference serves gcp items', matchesCloud(gcpItem, 'gcp'));
+check('gcp preference hides aws items', !matchesCloud(awsItem, 'gcp'));
+check('aws preference serves aws items', matchesCloud(awsItem, 'aws'));
+check('neutral items are served to everyone',
+  matchesCloud(neutralItem, 'gcp') && matchesCloud(neutralItem, 'aws') && matchesCloud(neutralItem, 'azure'));
+check('all serves every cloud',
+  matchesCloud(gcpItem, 'all') && matchesCloud(awsItem, 'all'));
 
 // ── Report ─────────────────────────────────────────────────────────────────
 

@@ -59,6 +59,26 @@ export const SRC = {
     url: 'https://cloud.google.com/architecture/framework',
   },
   mcp: { title: 'Model Context Protocol', url: 'https://modelcontextprotocol.io/introduction' },
+  awsWaf: {
+    title: 'AWS Well-Architected Framework',
+    url: 'https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html',
+  },
+  awsIam: {
+    title: 'AWS IAM User Guide',
+    url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html',
+  },
+  awsPrivatelink: {
+    title: 'What is AWS PrivateLink?',
+    url: 'https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html',
+  },
+  awsBedrock: {
+    title: 'What is Amazon Bedrock?',
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html',
+  },
+  awsBedrockGuardrails: {
+    title: 'Amazon Bedrock Guardrails',
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html',
+  },
 } satisfies Record<string, Citation>;
 
 export type SourceKey = keyof typeof SRC;

@@ -13,6 +13,8 @@ import Animated, { FadeIn, FadeInDown, useAnimatedStyle, withTiming } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DifficultyTag } from '@/components/difficulty-tag';
+import { setCloudPreference, CLOUD_META, type CloudPreference } from '@/data/profile';
+import { db } from '@/db';
 import {
   IconBoard,
   IconLearn,
@@ -148,8 +150,12 @@ function Tour({ onClose }: { onClose: () => void }) {
   const pageWidth = Math.min(width, MAX_CONTENT_WIDTH);
 
   const [index, setIndex] = useState(0);
+  const [cloud, setCloud] = useState<CloudPreference>('gcp');
   const scroller = useRef<ScrollView>(null);
-  const last = index === SLIDES.length - 1;
+  // The cloud picker is one step past the slides: the tour explains, then asks
+  // the single question that changes what the app serves.
+  const picking = index === SLIDES.length;
+  const last = picking;
 
   const goTo = (next: number) => {
     scroller.current?.scrollTo({ x: next * pageWidth, animated: !motion.reduced });
@@ -224,12 +230,61 @@ function Tour({ onClose }: { onClose: () => void }) {
               </Animated.View>
             </View>
           ))}
+
+          {/* The one configuration question, asked once, changeable later. */}
+          <View
+            style={{
+              width: pageWidth,
+              paddingHorizontal: space.xl,
+              justifyContent: 'center',
+              gap: space.lg,
+            }}>
+            <Stack gap={space.sm} style={{ alignItems: 'center' }}>
+              <Text variant="eyebrow" tone="accent">
+                LAST THING
+              </Text>
+              <Text variant="title" center>
+                Which cloud do you work on?
+              </Text>
+              <Text variant="small" tone="textMuted" center>
+                Cloud-specific questions follow your answer. Everything vendor-neutral, the
+                AI engineering and customer craft, is asked either way. You can change this
+                any time in Profile.
+              </Text>
+            </Stack>
+
+            <Stack gap={space.sm}>
+              {(['gcp', 'aws', 'azure', 'all'] as CloudPreference[]).map((key) => {
+                const active = cloud === key;
+                return (
+                  <Tappable
+                    key={key}
+                    onPress={() => setCloud(key)}
+                    accessibilityLabel={CLOUD_META[key].label}
+                    style={{
+                      padding: space.md,
+                      borderRadius: radius.md,
+                      borderWidth: 1.5,
+                      borderColor: active ? theme.accent : theme.border,
+                      backgroundColor: active ? theme.accentSoft : 'transparent',
+                    }}>
+                    <Text variant="smallStrong" tone={active ? 'accent' : 'text'}>
+                      {CLOUD_META[key].label}
+                    </Text>
+                    <Text variant="caption" tone="textFaint">
+                      {CLOUD_META[key].blurb}
+                    </Text>
+                  </Tappable>
+                );
+              })}
+            </Stack>
+          </View>
         </ScrollView>
 
         <Stack gap={space.lg} style={{ paddingHorizontal: space.xl, alignItems: 'center' }}>
           <Row gap={space.xs}>
-            {SLIDES.map((slide, dot) => (
-              <Dot key={slide.key} active={dot === index} />
+            {[...SLIDES.map((s) => s.key), 'cloud'].map((key, dot) => (
+              <Dot key={key} active={dot === index} />
             ))}
           </Row>
           <View style={{ width: '100%', maxWidth: 420 }}>
@@ -237,7 +292,13 @@ function Tour({ onClose }: { onClose: () => void }) {
               title={last ? 'Get started' : 'Next'}
               size="lg"
               full
-              onPress={() => (last ? onClose() : goTo(index + 1))}
+              onPress={() => {
+                if (!last) return goTo(index + 1);
+                // Persist before closing: a tour that asks a question and then
+                // discards the answer is worse than not asking.
+                void setCloudPreference(db, cloud).catch(() => {});
+                onClose();
+              }}
             />
           </View>
         </Stack>

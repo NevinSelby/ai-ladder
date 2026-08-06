@@ -1,5 +1,5 @@
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -41,6 +41,8 @@ import { applySessionResult, awardPoints, readProfile } from '@/data/profile';
 import { buildDrillSession } from '@/data/session';
 import { db } from '@/db';
 import { useProfile, useRefreshAppState } from '@/hooks/use-app-state';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { ShareCard, sessionShareLine } from '@/components/share-card';
 import {
   MAX_CONTENT_WIDTH,
   METER_META,
@@ -97,6 +99,10 @@ export default function DrillSession() {
   const insets = useSafeAreaInsets();
   const refresh = useRefreshAppState();
   const { data: profile } = useProfile();
+  const params = useLocalSearchParams<{ node?: string }>();
+  // A node id from a URL is untrusted; the session builder checks it against
+  // the taxonomy, and an unknown one simply yields an empty plan.
+  const onlyNode = typeof params.node === 'string' ? params.node : undefined;
 
   const [items, setItems] = useState<ContentItem[]>([]);
   const [index, setIndex] = useState(0);
@@ -124,7 +130,7 @@ export default function DrillSession() {
       // Read the goal fresh rather than trusting the cached profile: changing it
       // on the Today screen and starting immediately must take effect now.
       const current = await readProfile(db);
-      const plan = await buildDrillSession(db, goalSize(current.dailyGoal));
+      const plan = await buildDrillSession(db, goalSize(current.dailyGoal), new Date(), onlyNode);
       if (canceled) return;
       setItems(plan.items);
       setStage(plan.items.length > 0 ? 'question' : 'summary');
@@ -133,7 +139,7 @@ export default function DrillSession() {
     return () => {
       canceled = true;
     };
-  }, []);
+  }, [onlyNode]);
 
   const item = items[index];
   const payload = item?.mode === 'drill' ? (item.payload as DrillPayload) : null;
@@ -301,6 +307,7 @@ export default function DrillSession() {
         leveledUp={outcome.leveledUp}
         dailyBonus={outcome.dailyBonus}
         milestone={outcome.milestone}
+        streakDays={profile.streakDays}
         onDone={() => router.back()}
       />
     );
@@ -309,6 +316,58 @@ export default function DrillSession() {
   if (!item || !payload) return null;
 
   const showingFeedback = stage === 'feedback';
+
+  /**
+   * Keyboard play, web only.
+   *
+   * Number keys select an option, Enter checks and then advances, Escape asks
+   * to leave, and the arrows drive review. Every one of these has a visible
+   * control too, so the keyboard is an accelerator rather than the only door.
+   */
+  const shortcuts = useMemo(() => {
+    const map: Record<string, (() => void) | undefined> = {};
+    if (stage !== 'question' && stage !== 'feedback') return map;
+
+    map.Escape = requestExit;
+    map.ArrowLeft = () =>
+      setViewIndex((current) =>
+        current === null ? (index > 0 ? index - 1 : null) : Math.max(0, current - 1)
+      );
+    map.ArrowRight = () =>
+      setViewIndex((current) => (current === null || current + 1 >= index ? null : current + 1));
+
+    if (viewIndex !== null) return map;
+
+    if (showingFeedback) {
+      map.Enter = () => void advance();
+    } else {
+      map.Enter = () => {
+        if (isAnswered(response)) void submit();
+      };
+      // Digits pick a choice on the two option-shaped question kinds. Match
+      // and order questions are positional, so a number key has no meaning.
+      if (payload && (payload.kind === 'mcq' || payload.kind === 'multi')) {
+        payload.choices.forEach((choice, i) => {
+          map[String(i + 1)] = () => {
+            if (payload.kind === 'mcq') {
+              setResponse({ kind: 'mcq', choiceId: choice.id });
+            } else {
+              setResponse((current) => {
+                const chosen =
+                  current && current.kind === 'multi' ? new Set(current.choiceIds) : new Set<string>();
+                if (chosen.has(choice.id)) chosen.delete(choice.id);
+                else chosen.add(choice.id);
+                return { kind: 'multi', choiceIds: [...chosen] };
+              });
+            }
+          };
+        });
+      }
+    }
+    return map;
+  }, [stage, showingFeedback, viewIndex, index, payload, response, advance, submit, requestExit]);
+
+  useKeyboardShortcuts(shortcuts, stage === 'question' || stage === 'feedback');
 
   // Review mode replays an already-answered question. Everything below renders
   // from `shown*` so the live question and a reviewed one share one layout;
@@ -588,6 +647,7 @@ function SessionSummary({
   leveledUp,
   dailyBonus,
   milestone,
+  streakDays,
   onDone,
 }: {
   results: Result[];
@@ -595,6 +655,7 @@ function SessionSummary({
   leveledUp: Level | null;
   dailyBonus: number;
   milestone: number | null;
+  streakDays: number;
   onDone: () => void;
 }) {
   const theme = useTheme();
@@ -631,6 +692,11 @@ function SessionSummary({
       ) : (
         <Stack gap={space.xl}>
           {perfect || leveledUp || milestone ? <Confetti /> : null}
+
+          <ShareCard
+            title={`AI Ladder · ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+            line={sessionShareLine(correct, results.length, streakDays)}
+          />
 
           <Stack gap={space.xs}>
             <Eyebrow tone="accent">{perfect ? 'Perfect session' : 'Session complete'}</Eyebrow>

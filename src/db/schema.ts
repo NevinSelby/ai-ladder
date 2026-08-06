@@ -89,6 +89,34 @@ export const srsStates = sqliteTable('srs_states', {
   due: text('due').notNull(),
   reps: integer('reps').notNull().default(0),
   lapses: integer('lapses').notNull().default(0),
+  /**
+   * A leech: a node failed so often that repeating it is wasted time. Anki's
+   * lesson is that the item is the problem, not the learner, so it leaves
+   * rotation until it is deliberately resumed.
+   */
+  suspended: integer('suspended').notNull().default(0),
+  syncedAt: text('synced_at'),
+});
+
+/**
+ * Questions written by the user, queued for review before publication.
+ *
+ * Kept local first like everything else, then pushed to a moderation queue.
+ * Nothing here is ever shown to another user until a human approves it: an
+ * unmoderated community bank is a vector for both bad content and abuse.
+ */
+export const submissions = sqliteTable('submissions', {
+  id: text('id').primaryKey(),
+  mode: text('mode').notNull(),
+  nodeIds: text('node_ids', { mode: 'json' }).$type<string[]>().notNull(),
+  difficulty: text('difficulty').notNull(),
+  stem: text('stem').notNull(),
+  payload: text('payload', { mode: 'json' }).$type<unknown>().notNull(),
+  explanation: text('explanation').notNull(),
+  sourceUrl: text('source_url'),
+  /** draft | submitted | approved | rejected */
+  status: text('status').notNull().default('draft'),
+  createdAt: text('created_at').notNull(),
   syncedAt: text('synced_at'),
 });
 
@@ -119,6 +147,14 @@ export const profileState = sqliteTable('profile_state', {
   displayName: text('display_name'),
   /** Device preference, deliberately not synced: haptics are per-phone. */
   hapticsEnabled: integer('haptics_enabled').notNull().default(1),
+  /**
+   * Which cloud this person works on: 'gcp' | 'aws' | 'azure' | 'all'.
+   * Selection filters the question bank, because AWS questions served to
+   * someone who has never opened the AWS console are noise, not practice.
+   */
+  cloudPreference: text('cloud_preference').notNull().default('gcp'),
+  /** Whether the first-run cloud question has been answered. */
+  onboarded: integer('onboarded').notNull().default(0),
   /** Local date (YYYY-MM-DD) of the last completed session. */
   lastSessionDate: text('last_session_date'),
   /** Supabase user id once signed in; null while playing locally. */

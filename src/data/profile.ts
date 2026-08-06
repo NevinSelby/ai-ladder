@@ -14,6 +14,8 @@ export interface Profile {
   dailyGoal: DailyGoal;
   displayName: string | null;
   hapticsEnabled: boolean;
+  cloudPreference: CloudPreference;
+  onboarded: boolean;
   lastSessionDate: string | null;
   remoteUserId: string | null;
 }
@@ -27,6 +29,8 @@ export const EMPTY_PROFILE: Profile = {
   dailyGoal: 'regular',
   displayName: null,
   hapticsEnabled: true,
+  cloudPreference: 'gcp',
+  onboarded: false,
   lastSessionDate: null,
   remoteUserId: null,
 };
@@ -50,6 +54,8 @@ export function rowToProfile(row: Row | undefined): Profile {
     dailyGoal: (row.dailyGoal as DailyGoal) ?? 'regular',
     displayName: row.displayName,
     hapticsEnabled: row.hapticsEnabled !== 0,
+    cloudPreference: (row.cloudPreference as CloudPreference) ?? 'gcp',
+    onboarded: row.onboarded !== 0,
     lastSessionDate: row.lastSessionDate,
     remoteUserId: row.remoteUserId,
   };
@@ -70,6 +76,28 @@ export async function setHapticsEnabled(db: Database, enabled: boolean) {
     .set({ hapticsEnabled: enabled ? 1 : 0 })
     .where(eq(profileState.id, 1))
     .run();
+}
+
+/** Which cloud the questions should come from. 'all' serves every bank. */
+export type CloudPreference = 'gcp' | 'aws' | 'azure' | 'all';
+
+export const CLOUD_META: Record<CloudPreference, { label: string; blurb: string }> = {
+  gcp: { label: 'Google Cloud', blurb: 'Gemini Enterprise, VPC-SC, BigQuery, GKE.' },
+  aws: { label: 'AWS', blurb: 'Bedrock, PrivateLink, DynamoDB, EKS.' },
+  azure: { label: 'Azure', blurb: 'AI Foundry, Entra ID, Cosmos DB, AKS.' },
+  all: { label: 'All three', blurb: 'Every cloud. More questions, broader rotation.' },
+};
+
+export async function setCloudPreference(db: Database, cloud: CloudPreference) {
+  await db
+    .update(profileState)
+    .set({ cloudPreference: cloud, onboarded: 1, syncedAt: null })
+    .where(eq(profileState.id, 1))
+    .run();
+}
+
+export async function markOnboarded(db: Database) {
+  await db.update(profileState).set({ onboarded: 1 }).where(eq(profileState.id, 1)).run();
 }
 
 export async function setDailyGoal(db: Database, goal: DailyGoal) {

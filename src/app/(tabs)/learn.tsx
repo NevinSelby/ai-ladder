@@ -8,6 +8,7 @@ import { IconArrowRight, IconCheck, IconLearn } from '@/components/icons';
 import { Breathe } from '@/components/ambient';
 import { Bar, Card, Chip, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { lessonStats, readLessons, type LessonWithState } from '@/data/learning';
+import { recentChanges } from '@/data/changes';
 import { db } from '@/db';
 import { useRefreshAppState } from '@/hooks/use-app-state';
 import { meterColor, motion, radius, space, useScheme, useTheme } from '@/theme';
@@ -56,6 +57,12 @@ export default function LearnScreen() {
     );
   }, [lessons, filter]);
 
+  const { data: changes = { items: [], total: 0, since: '' } } = useQuery({
+    queryKey: ['app-state', 'recent-changes'],
+    queryFn: () => recentChanges(db),
+    placeholderData: { items: [], total: 0, since: '' },
+  });
+
   const nextUp = lessons.find((lesson) => !lesson.completedAt);
   const minutes = Math.round(stats.secondsSpent / 60);
 
@@ -90,6 +97,56 @@ export default function LearnScreen() {
       </Animated.View>
 
       <Spacer size={space.lg} />
+
+      {/* ── What changed ── */}
+      {changes.total > 0 ? (
+        <>
+          <Animated.View entering={FadeInDown.duration(motion.slow).delay(40)}>
+            <Card accent={theme.positive}>
+              <Stack gap={space.sm}>
+                <Row justify="space-between" align="baseline">
+                  <Eyebrow tone="positive">Changed this week</Eyebrow>
+                  <Text variant="caption" tone="textFaint">
+                    {changes.total} item{changes.total === 1 ? '' : 's'}
+                  </Text>
+                </Row>
+                {changes.items.slice(0, 3).map((change) => (
+                  <Row key={change.id} gap={space.sm} align="center">
+                    <Chip label={change.mode} color={theme.textFaint} />
+                    <Text variant="caption" tone="textMuted" numberOfLines={1} style={{ flex: 1 }}>
+                      {change.topics[0] ?? 'General'}
+                    </Text>
+                  </Row>
+                ))}
+                <Text variant="caption" tone="textFaint">
+                  The curriculum is refreshed against vendor release notes, so a renamed
+                  product or a superseded control shows up here rather than in an interview.
+                </Text>
+              </Stack>
+            </Card>
+          </Animated.View>
+          <Spacer size={space.md} />
+        </>
+      ) : null}
+
+      {/* ── Contribute ── */}
+      <Animated.View entering={FadeInDown.duration(motion.slow).delay(50)}>
+        <Pressable onPress={() => router.push('/submit')}>
+          <Card>
+            <Row justify="space-between" align="center">
+              <Stack gap={2} style={{ flex: 1, paddingRight: space.md }}>
+                <Text variant="smallStrong">Write a question</Text>
+                <Text variant="caption" tone="textFaint">
+                  Had a real interview question? Add it. Reviewed before anyone sees it.
+                </Text>
+              </Stack>
+              <IconArrowRight color={theme.accent} size={17} />
+            </Row>
+          </Card>
+        </Pressable>
+      </Animated.View>
+
+      <Spacer size={space.md} />
 
       {/* ── Progress ── */}
       <Animated.View entering={FadeInDown.duration(motion.slow).delay(60)}>

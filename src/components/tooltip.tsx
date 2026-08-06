@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 import { Text } from '@/components/ui';
 import { elevation, radius, space, useTheme } from '@/theme';
@@ -31,20 +31,22 @@ export function Tooltip({
 }) {
   const theme = useTheme();
   /**
-   * Hover and tap are tracked separately on purpose. Sharing one boolean means
-   * that on web the pointer opens it, the click that follows toggles it, and
-   * it closes again in the same gesture.
+   * Hover opens it where a pointer exists; tap only opens it where one does
+   * not. On web a click always follows a hover, so wiring both to the same
+   * state made the pointer open it and the click immediately close it again.
+   * Touch devices have no hover, so they keep the tap, with a timeout so a
+   * stray tap cannot leave a label stuck on screen.
    */
+  const pointer = Platform.OS === 'web';
   const [hovered, setHovered] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const open = hovered || pinned;
+  const [tapped, setTapped] = useState(false);
+  const open = pointer ? hovered : tapped;
 
-  // A tapped tooltip dismisses itself, so a stray tap cannot leave it stuck.
   useEffect(() => {
-    if (!pinned) return;
-    const timer = setTimeout(() => setPinned(false), 5000);
+    if (!tapped) return;
+    const timer = setTimeout(() => setTapped(false), 5000);
     return () => clearTimeout(timer);
-  }, [pinned]);
+  }, [tapped]);
 
   const position =
     align === 'right'
@@ -59,7 +61,7 @@ export function Tooltip({
     // paint order and clips it.
     <View style={{ position: 'relative', zIndex: open ? 100 : 0 }}>
       <Pressable
-        onPress={() => setPinned((v) => !v)}
+        onPress={pointer ? undefined : () => setTapped((v) => !v)}
         onHoverIn={() => setHovered(true)}
         onHoverOut={() => setHovered(false)}
         accessibilityLabel={`${title}. ${body}`}

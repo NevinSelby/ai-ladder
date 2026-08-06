@@ -21,7 +21,14 @@ import { LESSONS } from '@/content/lessons';
 import { SEED_ITEMS } from '@/content/seed';
 import { attemptSummary } from '@/data/attempts';
 import { lessonStats, recentDays } from '@/data/learning';
-import { setDailyGoal, setDisplayName, setHapticsEnabled } from '@/data/profile';
+import {
+  CLOUD_META,
+  setCloudPreference,
+  setDailyGoal,
+  setDisplayName,
+  setHapticsEnabled,
+  type CloudPreference,
+} from '@/data/profile';
 import { resetAllProgress } from '@/data/reset';
 import { pendingCount, restoreFromAccount, syncNow } from '@/data/sync';
 import { db } from '@/db';
@@ -100,6 +107,11 @@ export default function ProfileScreen() {
   const saveName = async () => {
     await setDisplayName(db, draft);
     setEditing(false);
+    refresh();
+  };
+
+  const changeCloud = async (cloud: CloudPreference) => {
+    await setCloudPreference(db, cloud);
     refresh();
   };
 
@@ -290,6 +302,52 @@ export default function ProfileScreen() {
                 <IconArrowRight color={theme.accent} size={16} />
               </Row>
             </Tappable>
+          </Card>
+        </Animated.View>
+
+        {/* ── Cloud ── */}
+        <Animated.View entering={FadeInDown.duration(motion.slow).delay(40 * motion.stagger)}>
+          <Card>
+            <Stack gap={space.md}>
+              <Stack gap={2}>
+                <Eyebrow>Your cloud</Eyebrow>
+                <Text variant="caption" tone="textFaint">
+                  Decides which platform-specific questions you are asked. Vendor-neutral
+                  material, AI engineering and customer craft, is always included.
+                </Text>
+              </Stack>
+
+              <Stack gap={space.xs}>
+                {(['gcp', 'aws', 'azure', 'all'] as CloudPreference[]).map((key) => {
+                  const active = profile.cloudPreference === key;
+                  return (
+                    <Tappable
+                      key={key}
+                      onPress={() => changeCloud(key)}
+                      accessibilityLabel={CLOUD_META[key].label}
+                      style={{
+                        padding: space.md,
+                        borderRadius: radius.md,
+                        borderWidth: 1.5,
+                        borderColor: active ? theme.accent : theme.border,
+                        backgroundColor: active ? theme.accentSoft : 'transparent',
+                      }}>
+                      <Row justify="space-between" align="center">
+                        <Stack gap={1} style={{ flex: 1 }}>
+                          <Text variant="smallStrong" tone={active ? 'accent' : 'text'}>
+                            {CLOUD_META[key].label}
+                          </Text>
+                          <Text variant="caption" tone="textFaint">
+                            {CLOUD_META[key].blurb}
+                          </Text>
+                        </Stack>
+                        {active ? <IconCheck color={theme.accent} size={16} /> : null}
+                      </Row>
+                    </Tappable>
+                  );
+                })}
+              </Stack>
+            </Stack>
           </Card>
         </Animated.View>
 

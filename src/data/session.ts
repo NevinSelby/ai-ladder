@@ -7,6 +7,8 @@ import { ContentItemSchema } from '@shared/content';
 import { isDue, retrievability, type SrsState } from '@shared/srs';
 import { TAXONOMY_BY_ID } from '@shared/taxonomy';
 
+import { readProfile, type CloudPreference } from '@/data/profile';
+
 export const DRILL_SESSION_SIZE = 5;
 
 type ItemRow = typeof contentItems.$inferSelect;
@@ -84,9 +86,11 @@ export async function nodeStrengths(db: Database, count = 4) {
   };
 }
 
-export async function readSrsStates(db: Database): Promise<Record<string, SrsState>> {
+export type SrsRecord = SrsState & { suspended: boolean };
+
+export async function readSrsStates(db: Database): Promise<Record<string, SrsRecord>> {
   const rows = await db.select().from(srsStates);
-  const out: Record<string, SrsState> = {};
+  const out: Record<string, SrsRecord> = {};
   for (const row of rows) {
     out[row.nodeId] = {
       stability: row.stability,
@@ -95,9 +99,36 @@ export async function readSrsStates(db: Database): Promise<Record<string, SrsSta
       due: row.due,
       reps: row.reps,
       lapses: row.lapses,
+      suspended: row.suspended !== 0,
     };
   }
   return out;
+}
+
+/** Nodes currently quarantined as leeches, with why, for the Progress screen. */
+export async function leeches(db: Database) {
+  const rows = await db.select().from(srsStates).where(eq(srsStates.suspended, 1));
+  return rows
+    .filter((row) => TAXONOMY_BY_ID[row.nodeId])
+    .map((row) => ({ nodeId: row.nodeId, node: TAXONOMY_BY_ID[row.nodeId], lapses: row.lapses }));
+}
+
+/** Quarantine a node that keeps being failed. */
+export async function suspendNode(db: Database, nodeId: string) {
+  await db
+    .update(srsStates)
+    .set({ suspended: 1, syncedAt: null })
+    .where(eq(srsStates.nodeId, nodeId))
+    .run();
+}
+
+/** Put a leech back into rotation, and forgive its lapse count. */
+export async function resumeLeech(db: Database, nodeId: string) {
+  await db
+    .update(srsStates)
+    .set({ suspended: 0, lapses: 0, syncedAt: null })
+    .where(eq(srsStates.nodeId, nodeId))
+    .run();
 }
 
 export async function writeSrsState(db: Database, nodeId: string, state: SrsState) {
@@ -157,6 +188,37 @@ export async function historyByItem(db: Database): Promise<Map<string, ItemHisto
 export const CORRECT_COOLDOWN_DAYS = 10;
 export const WRONG_COOLDOWN_DAYS = 1;
 
+/**
+ * Lapses before a node is treated as a leech and pulled from rotation.
+ *
+ * Anki's number is eight, which suits vocabulary drilled many times a day.
+ * This app serves a handful of questions daily, so four failures is already a
+ * strong signal that the item is not teaching anything and the concept needs
+ * reading rather than re-testing.
+ */
+export const LEECH_LAPSES = 4;
+
+/** True when an item only covers nodes that have been suspended as leeches. */
+function allNodesSuspended(item: ContentItem, states: Record<string, SrsRecord>): boolean {
+  return item.nodeIds.every((id) => states[id]?.suspended === true);
+}
+
+/**
+ * Whether this item's clouds match what the user actually works on.
+ *
+ * A node tagged `neutral` is always in scope; the craft of retrieval or
+ * incident response does not change vendor. A node tagged for a specific cloud
+ * only appears when that cloud is selected, or when the user asked for all of
+ * them.
+ */
+export function matchesCloud(item: ContentItem, preference: CloudPreference): boolean {
+  if (preference === 'all') return true;
+  return item.nodeIds.every((id) => {
+    const cloud = TAXONOMY_BY_ID[id]?.cloud;
+    return !cloud || cloud === 'neutral' || cloud === preference;
+  });
+}
+
 /** True if this item was answered recently enough that re-asking is noise. */
 export function onCooldown(history: ItemHistory | undefined, now: Date): boolean {
   if (!history) return false;
@@ -174,7 +236,7 @@ export function onCooldown(history: ItemHistory | undefined, now: Date): boolean
  */
 function itemUrgency(
   item: ContentItem,
-  states: Record<string, SrsState>,
+  states: Record<string, SrsRecord>,
   stats: Map<string, NodeStat>,
   now: Date,
   history: Map<string, ItemHistory>,
@@ -274,7 +336,9 @@ export interface SessionPlan {
 export async function buildDrillSession(
   db: Database,
   size = DRILL_SESSION_SIZE,
-  now = new Date()
+  now = new Date(),
+  /** Restrict the session to one taxonomy node, for topic-targeted practice. */
+  onlyNode?: string
 ): Promise<SessionPlan> {
   const rows = await db.select().from(contentItems).where(eq(contentItems.mode, 'drill'));
   const states = await readSrsStates(db);
@@ -282,10 +346,18 @@ export async function buildDrillSession(
   const history = await historyByItem(db);
   const jitter = makeJitter();
 
+  const profile = await readProfile(db);
   const live = rows
     .map(rowToItem)
     .filter((item): item is ContentItem => item !== null)
-    .filter((item) => item.nodeIds.every((id) => TAXONOMY_BY_ID[id]?.status === 'live'));
+    .filter((item) => item.nodeIds.every((id) => TAXONOMY_BY_ID[id]?.status === 'live'))
+    .filter((item) => matchesCloud(item, profile.cloudPreference))
+    // Leeches leave rotation entirely: an item whose every concept has been
+    // failed four times is not teaching, it is punishing.
+    .filter((item) => !allNodesSuspended(item, states))
+    // Topic practice is explicit and deliberate, so it overrides both the cloud
+    // filter's breadth and the no-repeat-node rule below.
+    .filter((item) => !onlyNode || item.nodeIds.includes(onlyNode));
 
   /**
    * Hard exclusion, not just a ranking penalty.
@@ -308,7 +380,9 @@ export async function buildDrillSession(
 
   for (const { item, urgency } of candidates) {
     if (chosen.length >= size) break;
-    if (item.nodeIds.some((id) => usedNodes.has(id))) continue;
+    // Targeted practice is all one node by definition, so the spread rule that
+    // normally prevents five questions on one concept has to stand down.
+    if (!onlyNode && item.nodeIds.some((id) => usedNodes.has(id))) continue;
     chosen.push(item);
     item.nodeIds.forEach((id) => usedNodes.add(id));
     if (item.nodeIds.some((id) => states[id] && states[id].reps > 0)) reviewCount += 1;
@@ -340,7 +414,12 @@ export async function itemsForMode(
   const history = await historyByItem(db);
   const jitter = makeJitter();
 
-  const all = rows.map(rowToItem).filter((item): item is ContentItem => item !== null);
+  const profile = await readProfile(db);
+  const all = rows
+    .map(rowToItem)
+    .filter((item): item is ContentItem => item !== null)
+    .filter((item) => matchesCloud(item, profile.cloudPreference))
+    .filter((item) => !allNodesSuspended(item, states));
   // Same rule as the drill: prefer questions that are not on cooldown, and only
   // fall back to the full bank when there are too few to run a round.
   const fresh = all.filter((item) => !onCooldown(history.get(item.id), now));

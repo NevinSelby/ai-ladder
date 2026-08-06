@@ -7,7 +7,7 @@ import { awardXp, comboMultiplier, streakMultiplier } from '@shared/progression'
 import { newState, ratingFromAttempt, ratingFromScore, review } from '@shared/srs';
 import { meterForNodes, type MeterKey } from '@shared/taxonomy';
 
-import { readSrsStates, writeSrsState } from './session';
+import { LEECH_LAPSES, readSrsStates, suspendNode, writeSrsState } from './session';
 
 export interface RecordedAttempt {
   id: string;
@@ -95,7 +95,14 @@ export async function persistAttempts(db: Database, planned: PlannedAttempt[]): 
     const states = await readSrsStates(db);
     for (const nodeId of item.nodeIds) {
       const previous = states[nodeId] ?? newState(now);
-      await writeSrsState(db, nodeId, review(previous, rating, now));
+      const next = review(previous, rating, now);
+      await writeSrsState(db, nodeId, next);
+      // Leech check. Repeating a concept that has now failed four times is not
+      // practice, it is a loop, so the node leaves rotation until it is
+      // deliberately resumed after reading the lesson.
+      if (next.lapses >= LEECH_LAPSES) {
+        await suspendNode(db, nodeId);
+      }
     }
   }
 }

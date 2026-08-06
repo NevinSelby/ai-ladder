@@ -151,6 +151,18 @@ export default function RootLayout() {
                   options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
                 />
                 <Stack.Screen
+                  name="session/flaw"
+                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="topic/[id]"
+                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
+                  name="submit"
+                  options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                />
+                <Stack.Screen
                   name="account/[id]"
                   options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
                 />

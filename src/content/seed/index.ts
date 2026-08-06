@@ -10,8 +10,10 @@ import { DRILL_FIELD } from './drill-field';
 import { DRILL_GCP_CORE } from './drill-gcp-core';
 import { DRILL_AI_DEPTH } from './drill-ai-depth';
 import { DRILL_SECID } from './drill-secid';
+import { DRILL_AWS } from './drill-aws';
 import { DRILL_RUNTIME } from './drill-runtime';
 import { DECOMPOSE_SEED } from './decompose';
+import { FLAW_SEED } from './flaw';
 import { DRILL_SEED } from './drill';
 import { DRILL_AI_ENG } from './drill-ai-eng';
 import { DRILL_AI_PLATFORM } from './drill-ai-platform';
@@ -37,11 +39,13 @@ export const SEED_ITEMS: ContentItem[] = [
   ...DRILL_RUNTIME,
   ...DRILL_AI_DEPTH,
   ...DRILL_SECID,
+  ...DRILL_AWS,
   ...ARENA_SEED,
   ...ARENA_EXPANSION,
   ...ARENA_DEEP,
   ...DECOMPOSE_SEED,
   ...ROOM_SEED,
+  ...FLAW_SEED,
 ];
 
 export interface SeedProblem {
@@ -94,6 +98,13 @@ export function validateSeed(items: ContentItem[] = SEED_ITEMS): SeedProblem[] {
     }
 
     // Mode-specific invariants the schema cannot express.
+    if (item.mode === 'flaw') {
+      const p = item.payload;
+      if (p.flawIndex < 0 || p.flawIndex >= p.lines.length) {
+        problems.push({ itemId: item.id, problem: 'flawIndex is outside lines' });
+      }
+    }
+
     if (item.mode === 'drill') {
       const p = item.payload;
       if (p.kind === 'mcq') {
