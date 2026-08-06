@@ -27,6 +27,7 @@ import { db } from '@/db';
 import { useProfile, useRefreshAppState } from '@/hooks/use-app-state';
 import {
   MAX_CONTENT_WIDTH,
+  useLayout,
   METER_META,
   meterColor,
   motion,
@@ -51,6 +52,7 @@ export default function ProgressScreen() {
   const scheme = useScheme();
   const refresh = useRefreshAppState();
   const { width } = useWindowDimensions();
+  const layout = useLayout();
 
   const { data: profile } = useProfile();
   const { data: streak = { current: 0, longest: 0, atRisk: false, activeToday: false, totalDays: 0, days: [] } } = useQuery({
@@ -91,7 +93,7 @@ export default function ProgressScreen() {
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
-  const inner = Math.min(width, MAX_CONTENT_WIDTH) - space.lg * 2;
+  const inner = Math.min(width, layout.contentWidth) - space.lg * 2;
   const cardInner = inner - space.lg * 2;
 
   const progress = levelProgress(profile.meters);

@@ -2,6 +2,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { PALETTES, type Palette, type SchemeName } from './tokens';
 
 export * from './tokens';
+export * from './layout';
 
 /**
  * Light is the product, not a preference.

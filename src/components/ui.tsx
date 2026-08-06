@@ -29,6 +29,7 @@ import {
   radius,
   space,
   type,
+  useLayout,
   useTheme,
 } from '@/theme';
 
@@ -99,7 +100,9 @@ export function Screen({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const inner = <View style={[styles.constrain, padded && styles.padded]}>{children}</View>;
+  const layout = useLayout();
+  const constrain = { ...styles.constrain, maxWidth: layout.contentWidth };
+  const inner = <View style={[constrain, padded && styles.padded]}>{children}</View>;
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -124,7 +127,7 @@ export function Screen({
               paddingBottom: Math.max(insets.bottom, space.lg),
             },
           ]}>
-          <View style={styles.constrain}>{footer}</View>
+          <View style={[styles.constrain, { maxWidth: layout.contentWidth }]}>{footer}</View>
         </View>
       ) : null}
     </SafeAreaView>

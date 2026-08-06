@@ -24,7 +24,8 @@ import { refreshQuests, type QuestStatus } from '@/data/quests';
 import { accounts as accountsTable } from '@/db/schema';
 import { db } from '@/db';
 import { useProfile, useRefreshAppState, useSessionStatus } from '@/hooks/use-app-state';
-import { MAX_CONTENT_WIDTH, METER_META, meterColor, radius, space, useScheme, useTheme } from '@/theme';
+import { MAX_CONTENT_WIDTH,
+  useLayout, METER_META, meterColor, radius, space, useScheme, useTheme } from '@/theme';
 import { MODE_META, type Mode } from '@shared/content';
 import { DAILY_GOALS, DAILY_GOAL_KEYS, drillMinutes, levelProgress, type DailyGoal } from '@shared/progression';
 import { useMotion } from '@/theme/motion-prefs';
@@ -73,7 +74,8 @@ export default function TodayScreen() {
   );
 
   const { width } = useWindowDimensions();
-  const inner = Math.min(width, MAX_CONTENT_WIDTH) - space.lg * 2;
+  const layout = useLayout();
+  const inner = Math.min(width, layout.contentWidth) - space.lg * 2;
 
   const progress = levelProgress(profile.meters);
   const weakestRow = [...board].sort((a, b) => a.health - b.health)[0];

@@ -62,6 +62,7 @@ export default function LessonScreen() {
     );
   }
 
+  // Diagrams may use the full reading column; the prose above stays narrower.
   const diagramWidth = Math.min(width, MAX_CONTENT_WIDTH) - space.lg * 4;
   const primaryNode = TAXONOMY_BY_ID[lesson.nodeIds[0]];
   const tint = primaryNode ? meterColor(primaryNode.meter, scheme) : theme.accent;
