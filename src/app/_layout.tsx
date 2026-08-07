@@ -19,14 +19,15 @@ import { currentSession, initAuthPrefs } from '@/lib/supabase';
 import { AuthGate } from '@/components/auth-gate';
 import { syncNow } from '@/data/sync';
 import {
-  SpaceGrotesk_500Medium,
-  SpaceGrotesk_700Bold,
-} from '@expo-google-fonts/space-grotesk';
+  InstrumentSerif_400Regular,
+  InstrumentSerif_400Regular_Italic,
+} from '@expo-google-fonts/instrument-serif';
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-} from '@expo-google-fonts/inter';
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import {
   JetBrainsMono_500Medium,
   JetBrainsMono_700Bold,
@@ -55,11 +56,12 @@ function Boot({ children }: { children: React.ReactNode }) {
    * that the app is held together loosely.
    */
   const [fontsReady] = useFonts({
-    SpaceGrotesk_500Medium,
-    SpaceGrotesk_700Bold,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
+    InstrumentSerif_400Regular,
+    InstrumentSerif_400Regular_Italic,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
     JetBrainsMono_500Medium,
     JetBrainsMono_700Bold,
   });

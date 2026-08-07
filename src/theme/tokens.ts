@@ -99,36 +99,46 @@ export function sequentialStep(fraction: number, scheme: SchemeName): string {
  * careful), it reads technical rather than playful, and it survives being
  * printed on both paper and ink backgrounds.
  */
+/**
+ * Light: warm paper, ink, and three electric accents.
+ *
+ * The accents are loud on purpose. Hot pink leads, canary carries reward, cyan
+ * carries the second half of every gradient. They are used as flat fills and
+ * gradient stops behind content, never as body text, so the loudness lands on
+ * shapes rather than on anything anyone has to read.
+ */
 const light = {
   scheme: 'light' as 'light' | 'dark',
-  /** Warm off-white. Pure white is a screenshot, not a reading surface. */
-  bg: '#F7F6F2',
-  surface: '#FFFFFF',
-  elevated: '#F1EFE9',
-  elevatedActive: '#E7E4DC',
-  border: '#E5E2D9',
-  borderStrong: '#CFCBBF',
-  /** Near-ink. Slightly warm so it sits on paper rather than floating. */
-  text: '#16161A',
-  textMuted: '#5A5A63',
-  textFaint: '#8B8B95',
-  accent: '#5B4BFF',
+  /** Warm canvas. Almost a cream: paper, not a screenshot. */
+  bg: '#F6F2EA',
+  surface: '#FFFDF9',
+  elevated: '#EFE9DE',
+  elevatedActive: '#E4DCCD',
+  border: '#E2DACB',
+  borderStrong: '#C9BFAC',
+  text: '#141317',
+  textMuted: '#57545E',
+  textFaint: '#8A8590',
+  /** Hot pink. The lead accent. */
+  accent: '#E8336D',
   accentText: '#FFFFFF',
-  accentSoft: '#ECE9FF',
-  /** The second half of every hero gradient. */
-  accentAlt: '#00C2C7',
-  positive: '#1C7A54',
-  positiveSoft: '#E2F3EB',
-  negative: '#B0242B',
-  negativeSoft: '#FBE9E9',
+  accentSoft: '#FCE4EC',
+  /** Cyan. The other end of every gradient. */
+  accentAlt: '#00B8C4',
+  /** Canary. Reward, highlight, the brush stroke on a finished quest. */
+  accentWarm: '#F5C518',
+  positive: '#1B7A4B',
+  positiveSoft: '#E2F2E8',
+  negative: '#C42B32',
+  negativeSoft: '#FBE7E7',
   warning: '#8A5A0B',
-  warningSoft: '#F9EFDC',
+  warningSoft: '#FAEFD8',
   flameDeep: '#D2361B',
   flameMid: '#F58A1F',
   flameCore: '#FFC93F',
-  scrim: 'rgba(18,18,22,0.36)',
-  shadow: 'rgba(38,34,28,0.10)',
-  shadowStrong: 'rgba(38,34,28,0.18)',
+  scrim: 'rgba(16,15,18,0.42)',
+  shadow: 'rgba(50,40,26,0.10)',
+  shadowStrong: 'rgba(50,40,26,0.18)',
 };
 
 export type Palette = typeof light;
@@ -141,33 +151,41 @@ export type Palette = typeof light;
  * raised in lightness so it keeps its contrast ratio, and the text tops out
  * below pure white because #FFF on near-black vibrates.
  */
+/**
+ * Dark: deep slate rather than black, with the accents lifted.
+ *
+ * Hot pink at its light-mode value vibrates badly on a dark field, so it moves
+ * up in lightness and down in saturation. Surfaces step tonally so elevation
+ * survives without borders doing all the work.
+ */
 const dark: Palette = {
   scheme: 'dark',
-  bg: '#0B0C0F',
-  surface: '#141519',
-  elevated: '#1C1E24',
-  elevatedActive: '#25272F',
-  border: '#282A31',
-  borderStrong: '#3A3D46',
-  text: '#E9E9EE',
-  textMuted: '#A0A1AC',
-  textFaint: '#71737E',
-  accent: '#8B7BFF',
-  accentText: '#0B0C0F',
-  accentSoft: '#1E1B36',
-  accentAlt: '#3DDCDF',
-  positive: '#4FC894',
-  positiveSoft: '#12261F',
-  negative: '#F08A84',
-  negativeSoft: '#2A1718',
-  warning: '#E3A94A',
+  bg: '#0E0D12',
+  surface: '#17161D',
+  elevated: '#201E28',
+  elevatedActive: '#2A2833',
+  border: '#2B2934',
+  borderStrong: '#413E4C',
+  text: '#EDEAF0',
+  textMuted: '#A6A1B0',
+  textFaint: '#75707F',
+  accent: '#FF5C8A',
+  accentText: '#121116',
+  accentSoft: '#2C1522',
+  accentAlt: '#2DD4DF',
+  accentWarm: '#FFD644',
+  positive: '#4FC98D',
+  positiveSoft: '#122318',
+  negative: '#F2787E',
+  negativeSoft: '#2A1518',
+  warning: '#E5AC4B',
   warningSoft: '#2A2113',
   flameDeep: '#E04A22',
   flameMid: '#FF9A2E',
   flameCore: '#FFD457',
-  scrim: 'rgba(0,0,0,0.62)',
-  shadow: 'rgba(0,0,0,0.35)',
-  shadowStrong: 'rgba(0,0,0,0.5)',
+  scrim: 'rgba(0,0,0,0.66)',
+  shadow: 'rgba(0,0,0,0.38)',
+  shadowStrong: 'rgba(0,0,0,0.54)',
 };
 
 export const PALETTES = { light, dark };
@@ -225,12 +243,27 @@ export const elevation = (palette: Palette, level: 0 | 1 | 2 = 1) => {
  *
  * System fonts were the tell that nobody had made a decision here.
  */
+/**
+ * Editorial pairing: a display serif against a geometric sans.
+ *
+ * Instrument Serif carries headlines. It has real contrast between thick and
+ * thin strokes, which is what makes a page look set rather than rendered, and
+ * its italic is the voice of the whole design. Plus Jakarta Sans does the
+ * functional work: geometric, even, quiet enough to disappear under the serif.
+ * JetBrains Mono stays for anything that is a number or a machine label.
+ *
+ * The previous single-family setup read as competent and anonymous. High
+ * typographic contrast is the cheapest way to look designed.
+ */
 export const fonts = {
-  display: 'SpaceGrotesk_700Bold',
-  displayMedium: 'SpaceGrotesk_500Medium',
-  sans: 'Inter_400Regular',
-  sansMedium: 'Inter_500Medium',
-  sansSemi: 'Inter_600SemiBold',
+  /** Headlines. Set large and tight, never below about 20px. */
+  display: 'InstrumentSerif_400Regular',
+  /** The house voice, for the second half of a split headline. */
+  displayItalic: 'InstrumentSerif_400Regular_Italic',
+  sans: 'PlusJakartaSans_400Regular',
+  sansMedium: 'PlusJakartaSans_500Medium',
+  sansSemi: 'PlusJakartaSans_600SemiBold',
+  sansBold: 'PlusJakartaSans_700Bold',
   mono: 'JetBrainsMono_500Medium',
   monoBold: 'JetBrainsMono_700Bold',
 } as const;
@@ -253,41 +286,58 @@ export const fonts = {
  * leading below 1.1 at the top end) because Space Grotesk is built for it and
  * because tight display type is what separates designed from generated.
  */
+/**
+ * The scale.
+ *
+ * Display sizes run very large and very tight, because a serif with this much
+ * stroke contrast only shows its character above about 30px. Body sizes stay
+ * modest so the gap between the two is dramatic: that gap is the design.
+ * Serif line-heights sit below 1.0 at the top end, which is normal for
+ * display setting and wrong for anything you actually read.
+ */
 export const type = {
-  /** Screen titles. Big enough to be the only thing you read first. */
+  /** Split-headline scale. One word per line, deliberately. */
   hero: {
-    fontSize: 44,
-    lineHeight: 46,
-    fontWeight: '700' as const,
-    letterSpacing: -1.6,
+    fontSize: 52,
+    lineHeight: 50,
+    fontWeight: '400' as const,
+    letterSpacing: -1.8,
     fontFamily: fonts.display,
   },
+  /** The italic half of a split headline. */
+  heroItalic: {
+    fontSize: 52,
+    lineHeight: 50,
+    fontWeight: '400' as const,
+    letterSpacing: -1.2,
+    fontFamily: fonts.displayItalic,
+  },
   display: {
-    fontSize: 32,
-    lineHeight: 36,
-    fontWeight: '700' as const,
-    letterSpacing: -1,
+    fontSize: 38,
+    lineHeight: 39,
+    fontWeight: '400' as const,
+    letterSpacing: -1.1,
     fontFamily: fonts.display,
   },
   title: {
-    fontSize: 24,
-    lineHeight: 29,
-    fontWeight: '700' as const,
+    fontSize: 27,
+    lineHeight: 30,
+    fontWeight: '400' as const,
     letterSpacing: -0.6,
     fontFamily: fonts.display,
   },
+  /** Subheads switch to the sans: a serif this small loses its contrast. */
   heading: {
-    fontSize: 19,
-    lineHeight: 26,
-    fontWeight: '500' as const,
+    fontSize: 18,
+    lineHeight: 25,
+    fontWeight: '600' as const,
     letterSpacing: -0.3,
-    fontFamily: fonts.displayMedium,
+    fontFamily: fonts.sansSemi,
   },
-  /** Question stems. Sized to be read once, carefully. */
   question: {
     fontSize: 19,
     lineHeight: 29,
-    fontWeight: '400' as const,
+    fontWeight: '500' as const,
     letterSpacing: -0.2,
     fontFamily: fonts.sansMedium,
   },
@@ -306,20 +356,20 @@ export const type = {
     fontFamily: fonts.sansSemi,
   },
   caption: { fontSize: 12.5, lineHeight: 18, fontWeight: '400' as const, fontFamily: fonts.sans },
-  /** Section labels. Mono, tracked wide, always uppercase. */
+  /** Masthead labels: mono, tracked wide, always uppercase. */
   eyebrow: {
     fontSize: 10.5,
     lineHeight: 14,
     fontWeight: '500' as const,
-    letterSpacing: 1.6,
+    letterSpacing: 1.8,
     fontFamily: fonts.mono,
   },
-  /** Figures. Tabular by nature, so columns and timers never jitter. */
+  /** Oversized rank and stat figures, as in 01 / 02 / 03. */
   numeric: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 34,
+    lineHeight: 36,
     fontWeight: '700' as const,
-    letterSpacing: -1,
+    letterSpacing: -1.4,
     fontFamily: fonts.monoBold,
   },
   numericSm: {

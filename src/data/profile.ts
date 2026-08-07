@@ -13,6 +13,7 @@ export interface Profile {
   points: number;
   dailyGoal: DailyGoal;
   displayName: string | null;
+  username: string | null;
   hapticsEnabled: boolean;
   cloudPreference: CloudPreference;
   onboarded: boolean;
@@ -28,6 +29,7 @@ export const EMPTY_PROFILE: Profile = {
   points: 0,
   dailyGoal: 'regular',
   displayName: null,
+  username: null,
   hapticsEnabled: true,
   cloudPreference: 'gcp',
   onboarded: false,
@@ -53,12 +55,21 @@ export function rowToProfile(row: Row | undefined): Profile {
     points: row.points,
     dailyGoal: (row.dailyGoal as DailyGoal) ?? 'regular',
     displayName: row.displayName,
+    username: row.username,
     hapticsEnabled: row.hapticsEnabled !== 0,
     cloudPreference: (row.cloudPreference as CloudPreference) ?? 'gcp',
     onboarded: row.onboarded !== 0,
     lastSessionDate: row.lastSessionDate,
     remoteUserId: row.remoteUserId,
   };
+}
+
+export async function setUsername(db: Database, username: string) {
+  await db
+    .update(profileState)
+    .set({ username: username.trim(), syncedAt: null })
+    .where(eq(profileState.id, 1))
+    .run();
 }
 
 export async function setDisplayName(db: Database, name: string) {

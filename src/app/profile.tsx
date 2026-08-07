@@ -250,7 +250,7 @@ export default function ProfileScreen() {
                     accessibilityLabel="Edit your name"
                     scaleOnPress={false}>
                     <Text variant="title">
-                      {profile.displayName ?? 'Set your name'}
+                      {profile.username ?? profile.displayName ?? 'Set your name'}
                     </Text>
                     {!profile.displayName ? (
                       <Text variant="caption" tone="accent">
@@ -448,7 +448,14 @@ export default function ProfileScreen() {
 
               {session ? (
                 <>
-                  <Text variant="smallStrong">{session.user.email}</Text>
+                  {profile.username ? (
+                    <Text variant="smallStrong" style={{ fontFamily: fonts.mono }}>
+                      {profile.username}
+                    </Text>
+                  ) : null}
+                  <Text variant="caption" tone="textFaint">
+                    {session.user.email}
+                  </Text>
                   <Text variant="caption" tone="textFaint">
                     Progress is saved on this device first, then merged with your account.
                     Syncing pulls anything your other devices have done and pushes anything

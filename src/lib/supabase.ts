@@ -261,3 +261,49 @@ export function initialsFor(name: string | null, email: string | null): string {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
+
+/** Shape rule, mirrored from the database check constraint. */
+export const USERNAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{2,19}$/;
+
+export function usernameProblem(value: string): string | null {
+  const v = value.trim();
+  if (v.length < 3) return 'At least 3 characters.';
+  if (v.length > 20) return 'At most 20 characters.';
+  if (/^[0-9]/.test(v)) return 'Cannot start with a number.';
+  if (!USERNAME_PATTERN.test(v)) return 'Letters, numbers and underscores only.';
+  return null;
+}
+
+/**
+ * Is this handle free?
+ *
+ * Answered by a security-definer function rather than a select, because the
+ * profiles table is readable only by its owner. The function returns a boolean
+ * and never a row, so it cannot be used to enumerate accounts. The database
+ * unique index is still the authority: two clients can both pass this check in
+ * the same instant, and only the insert settles it.
+ */
+export async function isUsernameFree(candidate: string): Promise<boolean | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('username_available', { candidate: candidate.trim() });
+  if (error) return null;
+  return Boolean(data);
+}
+
+/** Claim a handle for the signed-in account. */
+export async function claimUsername(username: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Not configured.' };
+  const { data: auth } = await supabase.auth.getSession();
+  const id = auth.session?.user.id;
+  if (!id) return { error: 'Not signed in.' };
+
+  const { error } = await supabase.from('profiles').upsert(
+    { id, username: username.trim() },
+    { onConflict: 'id' }
+  );
+  if (!error) return { error: null };
+
+  // 23505 is a unique violation: somebody took it between the check and here.
+  const taken = error.code === '23505' || /duplicate|unique/i.test(error.message);
+  return { error: taken ? 'That name was just taken. Try another.' : friendly(error.message) };
+}

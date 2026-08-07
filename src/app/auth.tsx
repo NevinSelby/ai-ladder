@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,17 +15,21 @@ import { IconArrowLeft, IconCheck, IconEye, IconEyeOff } from '@/components/icon
 import { LadderMark } from '@/components/logo';
 import { Tappable } from '@/components/tappable';
 import { Button, Card, Divider, Eyebrow, Row, Stack, Text } from '@/components/ui';
+import { setUsername } from '@/data/profile';
 import { restoreFromAccount } from '@/data/sync';
 import { db } from '@/db';
 import { useRefreshAppState } from '@/hooks/use-app-state';
 import { successHaptic } from '@/lib/haptics';
 import {
+  claimUsername,
+  isUsernameFree,
+  usernameProblem,
   getRememberMe,
   setRememberMe,
   signInWithPassword,
   signUpWithPassword,
 } from '@/lib/supabase';
-import { MAX_CONTENT_WIDTH, radius, space, useTheme } from '@/theme';
+import { MAX_CONTENT_WIDTH, fonts, radius, space, useTheme } from '@/theme';
 import { useMotion } from '@/theme/motion-prefs';
 
 type Mode = 'signin' | 'signup';
@@ -52,7 +56,10 @@ export default function AuthScreen() {
 
   const [mode, setMode] = useState<Mode>('signin');
   const [phase, setPhase] = useState<Phase>('form');
-  const [fullName, setFullName] = useState('');
+  const [username, setUsernameInput] = useState('');
+  const [handleState, setHandleState] = useState<'idle' | 'checking' | 'free' | 'taken' | 'invalid'>(
+    'idle'
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -60,9 +67,45 @@ export default function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Availability is checked while typing, debounced, and never trusted as the
+   * final word: the database unique index settles it at claim time. This exists
+   * to avoid making someone fill in a whole form to be told the name is gone.
+   */
+  useEffect(() => {
+    if (mode !== 'signup') return;
+    const problem = usernameProblem(username);
+    if (username.length === 0) {
+      setHandleState('idle');
+      return;
+    }
+    if (problem) {
+      setHandleState('invalid');
+      return;
+    }
+    setHandleState('checking');
+    const timer = setTimeout(async () => {
+      const free = await isUsernameFree(username);
+      setHandleState(free === null ? 'idle' : free ? 'free' : 'taken');
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [username, mode]);
+
+  const handleNote =
+    handleState === 'invalid'
+      ? (usernameProblem(username) ?? '')
+      : handleState === 'checking'
+        ? 'Checking...'
+        : handleState === 'taken'
+          ? 'Taken. Try another.'
+          : handleState === 'free'
+            ? 'Yours.'
+            : '3 to 20 characters. Letters, numbers and underscores.';
+
   const emailValid = /.+@.+\..+/.test(email.trim());
   const passwordValid = password.length >= 6;
-  const canSubmit = emailValid && passwordValid && !busy;
+  const canSubmit =
+    emailValid && passwordValid && !busy && (mode === 'signin' || handleState === 'free');
 
   /** From the confirm screen: the credentials are still in state, so one tap
    *  finishes the whole journey instead of bouncing through the form again. */
@@ -82,6 +125,16 @@ export default function AuthScreen() {
     }
     setPhase('syncing');
     successHaptic();
+    if (mode === 'signup' && username.trim()) {
+      const claim = await claimUsername(username);
+      if (claim.error) {
+        setError(claim.error);
+        setPhase('form');
+        setBusy(false);
+        return;
+      }
+      await setUsername(db, username);
+    }
     await restoreFromAccount(db);
     refresh();
     setBusy(false);
@@ -99,7 +152,7 @@ export default function AuthScreen() {
 
     const result =
       mode === 'signup'
-        ? await signUpWithPassword(email, password, fullName)
+        ? await signUpWithPassword(email, password, username)
         : await signInWithPassword(email, password);
 
     if (result.error) {
@@ -118,6 +171,16 @@ export default function AuthScreen() {
     // "tied to you" is true the moment the screen dismisses.
     setPhase('syncing');
     successHaptic();
+    if (mode === 'signup' && username.trim()) {
+      const claim = await claimUsername(username);
+      if (claim.error) {
+        setError(claim.error);
+        setPhase('form');
+        setBusy(false);
+        return;
+      }
+      await setUsername(db, username);
+    }
     await restoreFromAccount(db);
     refresh();
     setBusy(false);
@@ -257,26 +320,48 @@ export default function AuthScreen() {
 
                   {mode === 'signup' ? (
                     <Stack gap={space.xs}>
-                      <Text variant="smallStrong">Your name</Text>
+                      <Text variant="smallStrong">What should we call you?</Text>
                       <TextInput
-                        value={fullName}
-                        onChangeText={setFullName}
-                        placeholder="How the app should greet you"
+                        value={username}
+                        onChangeText={(v) => {
+                          // Strip as you type rather than rejecting on submit:
+                          // the rule is easier to learn when the field enforces it.
+                          setUsernameInput(v.replace(/[^A-Za-z0-9_]/g, ''));
+                          setError(null);
+                        }}
+                        placeholder="a handle, not your email"
                         placeholderTextColor={theme.textFaint}
-                        autoCapitalize="words"
-                        autoComplete="name"
-                        textContentType="name"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        maxLength={20}
                         style={{
                           fontSize: 16.5,
+                          fontFamily: fonts.mono,
                           color: theme.text,
                           backgroundColor: theme.elevated,
                           borderRadius: radius.md,
                           borderWidth: 1,
-                          borderColor: theme.border,
+                          borderColor:
+                            handleState === 'taken' || handleState === 'invalid'
+                              ? theme.negative
+                              : handleState === 'free'
+                                ? theme.positive
+                                : theme.border,
                           paddingHorizontal: space.lg,
                           paddingVertical: space.md + 2,
                         }}
                       />
+                      <Text
+                        variant="caption"
+                        tone={
+                          handleState === 'free'
+                            ? 'positive'
+                            : handleState === 'taken' || handleState === 'invalid'
+                              ? 'negative'
+                              : 'textFaint'
+                        }>
+                        {handleNote}
+                      </Text>
                     </Stack>
                   ) : null}
 

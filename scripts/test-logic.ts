@@ -194,6 +194,7 @@ const base: Profile = {
   points: 0,
   dailyGoal: 'regular',
   displayName: null,
+  username: null,
   hapticsEnabled: true,
   cloudPreference: 'gcp' as const,
   onboarded: true,

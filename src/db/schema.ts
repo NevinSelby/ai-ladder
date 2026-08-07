@@ -145,6 +145,11 @@ export const profileState = sqliteTable('profile_state', {
   dailyGoal: text('daily_goal').notNull().default('regular'),
   /** Chosen by the user; synced so a new device greets them by name. */
   displayName: text('display_name'),
+  /**
+   * The chosen handle. Globally unique, enforced by the database rather than
+   * here, and shown everywhere in preference to anything derived from email.
+   */
+  username: text('username'),
   /** Device preference, deliberately not synced: haptics are per-phone. */
   hapticsEnabled: integer('haptics_enabled').notNull().default(1),
   /**

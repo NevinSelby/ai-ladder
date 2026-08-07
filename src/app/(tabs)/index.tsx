@@ -132,22 +132,38 @@ export default function TodayScreen() {
 
       <Spacer size={space.lg} />
 
-      {/* ── Hero ──
-          One oversized line, the rung beneath it as a mono figure. The point
-          is that the screen has an obvious loudest thing, which a stack of
-          equal cards never does. */}
+      {/* ── Masthead ──
+          Set like a magazine cover: an edition line in mono above a split
+          headline where the second half turns italic serif. The whole point of
+          the pairing is that gap between the two faces, so it happens on the
+          first thing anyone reads. */}
       <Stagger index={0}>
-        <View style={{ gap: space.sm }}>
-          <Text variant="hero">{greeting()}</Text>
+        <View style={{ gap: space.md }}>
           <Row gap={space.md} align="center">
+            <Text variant="eyebrow" tone="accent">
+              EDITION {String(profile.longestStreak + 1).padStart(2, '0')}
+            </Text>
+            <View style={{ flex: 1 }}>
+              <Rule width={inner * 0.4} />
+            </View>
+            <Text variant="eyebrow" tone="textFaint">
+              {progress.level.title.toUpperCase()}
+            </Text>
+          </Row>
+
+          <View>
+            <Text variant="hero">{greeting()}</Text>
+            <Text variant="heroItalic" style={{ marginTop: -6 }}>
+              {profile.username ?? profile.displayName ?? 'welcome back'}
+            </Text>
+          </View>
+
+          <Row gap={space.lg} align="center">
             <Text variant="eyebrow" tone="textFaint">
               RUNG {progress.level.index + 1} / {LEVELS.length}
             </Text>
-            <View style={{ flex: 1 }}>
-              <Rule width={inner * 0.5} />
-            </View>
-            <Text variant="eyebrow" tone="accent">
-              {progress.level.title.toUpperCase()}
+            <Text variant="eyebrow" tone="textFaint">
+              {profile.streakDays} DAY STREAK
             </Text>
           </Row>
         </View>

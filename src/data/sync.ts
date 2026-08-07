@@ -240,6 +240,7 @@ export async function syncNow(db: Database): Promise<SyncResult> {
               ? remote.last_session_date
               : before.lastSessionDate,
           displayName: before.displayName ?? remote.display_name ?? null,
+          username: remote.username ?? before.username ?? null,
           remoteUserId: userId,
         })
         .where(eq(profileState.id, 1))
@@ -463,6 +464,7 @@ export async function syncNow(db: Database): Promise<SyncResult> {
       {
         id: userId,
         display_name: profile.displayName,
+        username: profile.username,
         depth: profile.meters.depth,
         platform: profile.meters.platform,
         ai_craft: profile.meters.aiCraft,
