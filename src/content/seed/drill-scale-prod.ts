@@ -204,8 +204,8 @@ export const DRILL_SCALE_PROD: DrillItem[] = [
       stem: 'Nightly document ingestion spikes to ten times your steady rate. What do you do?',
       choices: [
         { id: 'a', text: 'Autoscale the workers to meet the nightly spike', whyWrong: 'You pay for peak capacity, and push the spike onto every downstream dependency.' },
-        { id: 'b', text: 'Queue the work and drain at a sustainable rate' },
-        { id: 'c', text: 'Reject anything above the steady ingestion rate', whyWrong: 'Drops the customer’s data to protect your own capacity.' },
+        { id: 'b', text: 'Queue the work and drain at a rate we can sustain' },
+        { id: 'c', text: 'Reject anything arriving above the steady ingest rate', whyWrong: 'Drops the customer’s data to protect your own capacity.' },
         { id: 'd', text: 'Process it synchronously with a very long timeout', whyWrong: 'Ties up capacity for hours and fails as a single unit if anything goes wrong.' },
       ],
       correctId: 'b',

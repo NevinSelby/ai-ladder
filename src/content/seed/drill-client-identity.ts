@@ -50,8 +50,8 @@ export const DRILL_CLIENT_IDENTITY: DrillItem[] = [
       stem: 'Users often stop a long answer halfway. Your reported token spend is lower than the provider’s invoice. What is the likely cause?',
       choices: [
         { id: 'a', text: 'The provider bills the full completion it started to generate', whyWrong: 'Providers meter the tokens actually emitted, so a stopped stream costs them less, not more.' },
-        { id: 'b', text: 'Your client counts each retried call twice in its own ledger', whyWrong: 'Double counting would push your total above the invoice. The gap runs the other way.' },
-        { id: 'c', text: 'Canceled streams never deliver their final usage event' },
+        { id: 'b', text: 'Your client counts each retried call twice in its ledger', whyWrong: 'Double counting would push your total above the invoice. The gap runs the other way.' },
+        { id: 'c', text: 'Canceled streams never deliver a final usage record at all' },
         { id: 'd', text: 'Prompt caching discounts are not reaching your cached prefix', whyWrong: 'Caching lowers your recorded cost and their charge together, so it cannot open a gap between them.' },
       ],
       correctId: 'c',

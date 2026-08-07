@@ -1433,7 +1433,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
         { id: 'a', text: 'Alert on user-visible symptoms and error budget burn' },
         { id: 'b', text: 'Raise the thresholds on the noisiest component alerts', whyWrong: 'Tunes the noise down and still leaves you blind to the failure mode nobody wrote a cause alert for.' },
         { id: 'c', text: 'Route the low-severity alerts to a chat channel', whyWrong: 'Moves the noise somewhere quieter. The outage that produced no alert still produces no alert.' },
-        { id: 'd', text: 'Add an alert for last month specific failure mode', whyWrong: 'Fights the last war. The next outage will have a cause nobody enumerated in advance either.' },
+        { id: 'd', text: 'Add an alert for last month’s failure mode', whyWrong: 'Fights the last war. The next outage will have a cause nobody enumerated in advance either.' },
       ],
       correctId: 'a',
     },
@@ -2024,7 +2024,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Retry buttons let users hammer a failing service', whyWrong: 'A rate-limited button that disables while a request is pending handles that. The ambiguity is the real defect.' },
         { id: 'b', text: 'It hides whether you continue or start from scratch' },
-        { id: 'c', text: 'Retries at this point should always be automatic', whyWrong: 'Automatic regeneration spends tokens without consent and swaps the user partial answer for a different one.' },
+        { id: 'c', text: 'Retries at this point should always be automatic', whyWrong: 'Automatic regeneration spends tokens without consent and swaps the user’s partial answer for a different one.' },
         { id: 'd', text: 'The button should carry the upstream error code', whyWrong: 'Error codes belong in diagnostics and support tooling, not in the label of the primary action.' },
       ],
       correctId: 'b',

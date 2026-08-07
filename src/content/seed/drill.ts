@@ -36,7 +36,7 @@ export const DRILL_SEED: DrillItem[] = [
         },
         {
           id: 'b',
-          text: 'Workload Identity Federation trusting GitHub’s OIDC issuer',
+          text: 'Workload Identity Federation trusting the GitHub OIDC provider',
         },
         {
           id: 'c',
@@ -81,7 +81,7 @@ export const DRILL_SEED: DrillItem[] = [
           whyWrong:
             'Controls the key, not the copy. Anyone holding read access decrypts transparently, and the export lands in the destination project as plaintext.',
         },
-        { id: 'c', text: 'A VPC Service Controls perimeter around the data projects' },
+        { id: 'c', text: 'A VPC Service Controls perimeter around those data projects' },
         {
           id: 'd',
           text: 'Domain restricted sharing on the organization’s IAM policy',
@@ -592,7 +592,7 @@ export const DRILL_SEED: DrillItem[] = [
           whyWrong:
             'Trades answer quality for a saving that is available without one. Tier by task difficulty once the input term is dealt with, not before.',
         },
-        { id: 'c', text: 'Cache the stable 30k-token policy prefix between turns' },
+        { id: 'c', text: 'Cache the stable 30k-token policy prefix across every turn' },
         {
           id: 'd',
           text: 'Batch the turns overnight to get the batch pricing tier',
@@ -623,7 +623,7 @@ export const DRILL_SEED: DrillItem[] = [
           whyWrong:
             'Works, and puts you in the critical path of every change they make. That is precisely the ticket queue they are trying to leave.',
         },
-        { id: 'b', text: 'They run an MCP server and your agent discovers its tools' },
+        { id: 'b', text: 'They run an MCP server and your agent discovers those tools' },
         {
           id: 'c',
           text: 'They fork your agent repo and add integrations to their copy',
@@ -1144,7 +1144,7 @@ export const DRILL_SEED: DrillItem[] = [
         },
         {
           id: 'd',
-          text: '"Four in five unaided. The question is the other fifth."',
+          text: '"Four in five go through unaided. The question is the fifth."',
         },
       ],
       correctId: 'd',
