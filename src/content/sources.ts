@@ -59,6 +59,22 @@ export const SRC = {
     url: 'https://cloud.google.com/architecture/framework',
   },
   mcp: { title: 'Model Context Protocol', url: 'https://modelcontextprotocol.io/introduction' },
+  mcpArchitecture: {
+    title: 'MCP architecture overview: primitives and scope',
+    url: 'https://modelcontextprotocol.io/docs/learn/architecture',
+  },
+  a2a: {
+    title: 'Agent2Agent (A2A) Protocol Specification',
+    url: 'https://a2a-protocol.org/latest/specification/',
+  },
+  modelGarden: {
+    title: 'Overview of Model Garden',
+    url: 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-garden/explore-models',
+  },
+  auditLogs: {
+    title: 'Cloud Audit Logs overview',
+    url: 'https://docs.cloud.google.com/logging/docs/audit',
+  },
   awsWaf: {
     title: 'AWS Well-Architected Framework',
     url: 'https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html',

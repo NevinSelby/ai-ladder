@@ -84,12 +84,12 @@ export const DRILL_DELIVERY: DrillItem[] = [
     criticScore: null,
     payload: {
       kind: 'mcq',
-      stem: '5,000 agents, 30 conversations each per working day, ~10k tokens per conversation. Roughly how many tokens per month?',
+      stem: '5,000 agents, 30 conversations each per working day, 22 working days in the month, ~10k tokens per conversation. Roughly how many tokens per month?',
       choices: [
-        { id: 'a', text: 'About 1.5 billion', whyWrong: 'The daily total. Multiplying by the 22 working days is the step that got skipped.' },
+        { id: 'a', text: 'About 1.5 billion', whyWrong: 'The daily total: 5,000 times 30 times 10k is 1.5 billion. Multiplying by the 22 working days is the step that got skipped.' },
         { id: 'b', text: 'About 33 billion' },
         { id: 'c', text: 'About 330 billion', whyWrong: 'Ten times high, as if each conversation ran to 100k tokens rather than 10k.' },
-        { id: 'd', text: 'About 150 million', whyWrong: 'Two orders of magnitude low, and that is an error that reaches a price quote.' },
+        { id: 'd', text: 'About 150 million', whyWrong: 'One day at 1k tokens a conversation rather than a month at 10k, so two slips compounded. It is off by more than two orders of magnitude, and that is an error that reaches a price quote.' },
       ],
       correctId: 'b',
     },
@@ -100,7 +100,7 @@ export const DRILL_DELIVERY: DrillItem[] = [
     nodeIds: ['del.napkin', 'gcp.vector_search'],
     difficulty: 'deep',
     explanation:
-      'A float32 vector of 768 dimensions is about 3 KB. Four million of them is roughly 12 GB before index overhead, which typically adds a substantial multiple. Knowing this stops you promising an in-memory index that will not fit on the instance the customer already budgeted for.',
+      'A float32 vector of 768 dimensions is 768 times 4 bytes, about 3 KB. Four million of them is roughly 12 GB of raw vectors, and a graph index such as HNSW adds its own edges and payloads on top, so budget above the raw figure rather than at it. Knowing this stops you promising an in-memory index that will not fit on the instance the customer already budgeted for.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -109,9 +109,9 @@ export const DRILL_DELIVERY: DrillItem[] = [
       stem: '4 million chunks, 768-dimension float32 embeddings. Roughly how much memory for the raw vectors?',
       choices: [
         { id: 'a', text: 'Around 12 GB' },
-        { id: 'b', text: 'Around 1.2 GB', whyWrong: 'Ten times low: this counts one byte per dimension rather than four.' },
+        { id: 'b', text: 'Around 1.2 GB', whyWrong: 'A decimal slip. 4 million times 3 KB is 12 GB; 1.2 GB would be four hundred thousand vectors.' },
         { id: 'c', text: 'Around 120 GB', whyWrong: 'Ten times high. 4 million times 3 KB is 12 GB, not 120.' },
-        { id: 'd', text: 'Around 3 GB', whyWrong: 'That is a million vectors at 3 KB each. The count here is four million.' },
+        { id: 'd', text: 'Around 3 GB', whyWrong: 'One byte per dimension rather than four: 4 million times 768 bytes. That is the int8 quantized size, not float32.' },
       ],
       correctId: 'a',
     },
@@ -144,7 +144,7 @@ export const DRILL_DELIVERY: DrillItem[] = [
     nodeIds: ['del.slo', 'del.tco'],
     difficulty: 'deep',
     explanation:
-      'You cannot offer an availability number above what your dependencies deliver. Committing to 99.99% while sitting on a 99.9% dependency means signing up for penalties you will pay. The arithmetic is unforgiving and worth doing before the contract. The useful move is not to refuse the target: it is to name the redundancy that would actually reach it, a second provider with automatic failover and the evaluation work to keep both answers acceptable, and then price that so the customer can decide whether the ninth is worth what it costs.',
+      'A dependency you cannot serve without sets your ceiling, and your own failures compound below it, so 99.99% on top of a single 99.9% model is arithmetic that never closes. Note the precise form of the rule: the ceiling comes from the dependency being unavoidable, not from it being a model. Anything that lets a request succeed without that provider lifts the ceiling, and there are two shapes of it: a second provider with automatic failover, or a degraded path that answers from cache or a smaller local model when the primary is down. Both are real engineering with real cost. The useful move is to name which one would reach the number and price it, so the customer decides whether the extra ninth is worth what it costs.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -152,10 +152,10 @@ export const DRILL_DELIVERY: DrillItem[] = [
       kind: 'mcq',
       stem: 'A customer wants 99.99% for a service whose model dependency publishes 99.9%. What do you say?',
       choices: [
-        { id: 'a', text: 'Agree to 99.99% and cover the gap with retries and backoff', whyWrong: 'Retries mask transient errors. They do not lift you above a dependency’s ceiling.' },
+        { id: 'a', text: 'Agree to 99.99% and cover the gap with retries and backoff', whyWrong: 'Retries mask transient errors on a provider that is still up. They do nothing during the outage window the SLA is measuring.' },
         { id: 'b', text: 'Agree, and rely on the dependency beating its published number', whyWrong: 'Betting contractual penalties on someone else exceeding their own SLA.' },
-        { id: 'c', text: 'Offer 99.9% and decline to discuss anything above it', whyWrong: 'Matching the dependency is right; refusing to price redundancy is not.' },
-        { id: 'd', text: 'Explain that beating 99.9% needs redundancy across providers' },
+        { id: 'c', text: 'Offer 99.9% and decline to discuss anything above it', whyWrong: 'Even matching it is optimistic once your own failures compound, and refusing to price the path above it leaves the customer no decision to make.' },
+        { id: 'd', text: 'Explain that beating 99.9% needs an independent fallback' },
       ],
       correctId: 'd',
     },
@@ -432,7 +432,7 @@ export const DRILL_DELIVERY: DrillItem[] = [
     nodeIds: ['cust.explaining_ai', 'ai.nondeterminism'],
     difficulty: 'deep',
     explanation:
-      'A non-technical stakeholder needs a decision, not a mechanism. Reframing from "how accurate is it" to "what happens on the cases it gets wrong, and how would we know" gives them something they can act on, and introduces the review workflow the design needed anyway.',
+      '"How accurate is it" is a question about the system. The question the stakeholder can actually act on is about the failures: what a wrong answer costs, who catches it, and how long it takes to notice. Answering the second question answers the first as a by-product, because you cannot describe the error path without naming the error rate. It also drags the review workflow into the conversation while the design can still absorb it, rather than after go-live when somebody discovers there is no queue for the cases the system got wrong. The tempting runner-up, walking them through the confusion matrix, is the same content aimed at the wrong audience: correct, complete, and undecidable by the person holding the budget.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,

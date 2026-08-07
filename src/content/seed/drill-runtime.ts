@@ -314,7 +314,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
     nodeIds: ['scale.caching', 'client.state'],
     difficulty: 'intro',
     explanation:
-      'The classic cache bug is repopulating from a value that was true a moment ago. Committing before touching the cache, and deleting rather than writing the new value, removes the window where a concurrent reader repopulates the entry with pre-commit data.',
+      'The classic cache bug is repopulating from a value that was true a moment ago. Commit before you touch the cache, and delete the entry rather than writing your local copy into it, because a write races with every other writer while a delete forces the next reader back to the committed row. Be honest about what this buys: it shrinks the race, it does not close it. A reader that loaded the old value before your commit can still land its write after your delete. Closing it entirely takes versioned entries, a short lock on the key, or accepting a bounded staleness window on purpose. Delete-after-commit is the cheap default, not a proof.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -359,7 +359,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
     nodeIds: ['scale.pooling'],
     difficulty: 'edge',
     explanation:
-      'Transaction-mode pooling gives you a connection only for the duration of a transaction, so anything that assumes state persists on the same session between statements silently breaks. It is the standard fix for serverless connection pressure, and it is a behavioral change, not a transparent optimization.',
+      'Transaction-mode pooling hands your connection back to the pool at every commit, so the next statement may land on a different backend. Anything that lives on the session rather than in the transaction therefore evaporates: session-level SET, temporary tables, advisory locks, LISTEN and NOTIFY, and server-side prepared statements unless the pooler explicitly tracks them. Note that this is a behavioral change and not a transparent optimization, which is why it reads as an intermittent bug: the failure only shows when a request happens to be handed a backend that did not run the earlier statement.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -370,7 +370,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
         { id: 'a', text: 'Code relying on session state between statements' },
         { id: 'b', text: 'Code that wraps several statements in one transaction', whyWrong: 'The transaction is the unit the pooler pins a connection to, so transactional code is precisely what keeps working.' },
         { id: 'c', text: 'Read-only queries issued outside any transaction', whyWrong: 'Single-statement reads are the easiest case for transaction pooling; they neither need nor keep session state.' },
-        { id: 'd', text: 'Any client that connects to the pooler using TLS 1.3', whyWrong: 'The pooler terminates and re-establishes TLS itself. Encryption is orthogonal to pooling mode.' },
+        { id: 'd', text: 'Any client that connects to the pooler using TLS 1.3', whyWrong: 'Transport encryption is negotiated per connection and is orthogonal to whether the pooler pins that connection for a session or for a transaction.' },
       ],
       correctId: 'a',
     },
@@ -1217,7 +1217,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
     nodeIds: ['prod.migrations'],
     difficulty: 'edge',
     explanation:
-      'Migrations fail in production for reasons that never appear on a small development database: a lock held long enough to queue every other query, or an index build wrapped in the migration tool’s transaction. Set a short lock timeout so a blocked migration fails fast instead of stalling the application behind it.',
+      'Migrations fail in production for reasons that never appear on a small development database, where nothing else is running. The mechanism to know by name, and it is the same in Postgres and in MySQL: the DDL waits behind one open transaction for its exclusive lock, and every query that arrives afterward queues behind the waiting DDL rather than overtaking it. One idle-in-transaction session therefore stalls the whole table, and the migration itself may have been instant. Set a short lock timeout, in Postgres lock_timeout and in MySQL lock_wait_timeout, so a blocked migration fails fast and retries instead of taking the application down with it. Note also that the concurrent index build that avoids this cannot run inside a transaction, which is exactly what many migration tools wrap everything in.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -1593,7 +1593,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
       pairs: [
         { left: 'Added latency on a dependency', right: 'Timeout values, connection pool sizing, queue growth and retry amplification' },
         { left: 'Sustained 503s from a dependency', right: 'The circuit breaker, the fallback path and what the user is told' },
-        { left: 'A dropped network partition to one zone', right: 'Failover routing and whether the survivors have N-1 capacity' },
+        { left: 'A network partition isolating one zone', right: 'Failover routing and whether the survivors have N-1 capacity' },
         { left: 'An expired credential on a background job', right: 'Rotation handling and whether the failure alerts anybody' },
       ],
     },
@@ -1956,7 +1956,7 @@ export const DRILL_RUNTIME: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Keep the token in a JavaScript closure held in memory', whyWrong: 'Better than localStorage against a stray storage read, and still reachable by any code executing in the page.' },
         { id: 'b', text: 'Store the token in a cookie without httpOnly set', whyWrong: 'A cookie readable by JavaScript is precisely what the reviewer objected to, with request forgery risk added.' },
-        { id: 'c', text: 'Use a service worker to hold the token for you', whyWrong: 'Narrows exposure and remains script-accessible browser context, and it fails whenever the worker is unregistered.' },
+        { id: 'c', text: 'Use a service worker to hold the token for you', whyWrong: 'A real mitigation, and it does not satisfy this reviewer: injected script cannot read the worker’s memory but can still ask it to make authenticated calls, and the worker can be unregistered or evicted.' },
         { id: 'd', text: 'A backend for frontend holding an httpOnly cookie' },
       ],
       correctId: 'd',

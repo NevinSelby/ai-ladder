@@ -18,7 +18,7 @@ export const DRILL_AWS: DrillItem[] = [
     nodeIds: ['aws.iam', 'aws.organizations'],
     difficulty: 'deep',
     explanation:
-      'Every AWS request starts denied. An explicit Deny found anywhere ends the evaluation immediately, then the organization guardrails and any permissions boundary cap what is even reachable, and only after that does an Allow in an identity or resource policy matter. People debug the wrong layer constantly: they widen an IAM policy when an SCP or a boundary was the thing saying no.',
+      'Every AWS request starts denied. An explicit Deny found in any applicable policy ends the evaluation on the spot. Next come the organization guardrails, resource control policies and then service control policies, which can only subtract. Only after those does the enforcement code go looking for an Allow, first in any resource-based policy and then in the identity-based policies. A permissions boundary and any session policy are applied last, and can only narrow what survived. Getting this order right is what stops the usual mistake of widening an IAM policy when an SCP or a boundary was the thing saying no.',
     citations: cite('awsIam'),
     origin: 'seed',
     criticScore: null,
@@ -28,9 +28,9 @@ export const DRILL_AWS: DrillItem[] = [
       steps: [
         'Start from an implicit deny: nothing is permitted by default',
         'Look for an explicit Deny in any applicable policy, which settles the decision on the spot',
-        'Apply the service control policies inherited from the organization, which can only subtract',
-        'Apply any permissions boundary attached to the calling principal',
-        'Look for an Allow in the identity-based or resource-based policies',
+        'Apply the organization guardrails, resource control policies and then service control policies',
+        'Look for an Allow, first in any resource-based policy and then in the identity-based policies',
+        'Apply any permissions boundary and session policy, which can only narrow what is left',
       ],
     },
   },

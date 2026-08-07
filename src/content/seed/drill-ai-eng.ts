@@ -10,7 +10,8 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['ai.context', 'ai.rag_failure'],
     difficulty: 'deep',
     explanation:
-      'Models attend less reliably to material buried in the middle of a long context. The lost-in-the-middle effect. Putting fewer, better-ranked passages near the instruction beats stuffing the window, and it is cheaper. More context is not more understanding. Note that nothing about the retriever changed here: the same ranked list is being cut at a different depth, so the regression has to come from what the extra passages do to attention rather than from ranking quality.',
+      'Two things happen when you widen top-k, and both live on the model side rather than the retrieval side. The relevant passage gets pushed away from the instruction into the middle of a long context, where attention is measurably less reliable, and it now competes with twenty-five weaker passages for that attention. Treat the strength of the positional effect as something to measure on your own model and prompt rather than a fixed law: it varies by model and it has moved as long-context training has improved. What does not vary is the direction of the trade. Nothing about the retriever changed here, because top-k is a cut depth on an already-ranked list, so the regression has to come from what the extra passages do once they are in the window.',
+    diagramId: 'rag-pipeline',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -25,8 +26,8 @@ export const DRILL_AI_ENG: DrillItem[] = [
         },
         {
           id: 'b',
-          text: 'The embedding model ranks poorly past the top few, so hits 6 to 30 are noise',
-          whyWrong: 'Those passages were always ranked in that order. Nothing about the retriever changed when you kept more of its list.',
+          text: 'The retriever re-scores the corpus at k=30, so even its top 5 changed',
+          whyWrong: 'Top-k is a cut depth on a ranked list, not a re-scoring. Positions one to five are byte-identical at k=5 and k=30.',
         },
         { id: 'c', text: 'The relevant passage now sits mid-context and is attended to less reliably' },
         {
@@ -44,7 +45,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['ai.context', 'ai.prompt_design'],
     difficulty: 'deep',
     explanation:
-      'Put the stable material first so it can be cached, and the material the model must act on closest to the instruction. That ordering serves both cost and quality at once, which is rare enough to be worth memorising.',
+      'Put the stable material first so it can be cached, and the material the model must act on closest to the instruction. That ordering serves both cost and quality at once, which is rare enough to be worth memorizing.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -65,7 +66,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['ai.prompt_design', 'ai.structured_output'],
     difficulty: 'core',
     explanation:
-      'Describing a format in prose gets you something close to that format most of the time, which is the worst possible reliability profile. It works in testing and fails in production on the cases you did not try. Constraining the output to a schema at the API level, rather than asking for it in words, turns a probabilistic output into a checked one, and validating every response tells you which calls failed instead of leaving you to find out downstream. A single bounded repair retry, with the validation error fed back, handles the residue.',
+      'Describing a format in prose gets you something close to that format most of the time, which is the worst possible reliability profile. It works in testing and fails in production on the cases you did not try. Constraining the output to a schema at the API level moves the format from a request to a constraint, and validating every response tells you which calls failed instead of leaving you to find out downstream. Be precise about what that buys you: a schema constrains the shape of the output, not the truth of the values inside it. A perfectly valid object can carry a fabricated invoice number, and only a business-rule check catches that. Note also that providers enforce a subset of JSON Schema, so ranges and string lengths often need checking in your own code even when the shape is guaranteed.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -122,7 +123,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['ai.rerank', 'ai.hybrid_search'],
     difficulty: 'deep',
     explanation:
-      'The standard shape is retrieve wide and cheap, then rerank narrow and expensive. A cross-encoder sees the query and passage together in one forward pass, which a bi-encoder embedding computed offline never does, and it consistently produces the largest single quality jump per hour of engineering effort in a RAG system. The token saving and any deduplication that falls out of it are side effects, not the mechanism.',
+      'The standard shape is retrieve wide and cheap, then rerank narrow and expensive. The mechanism is joint scoring: a cross-encoder reads the query and the passage together, so it can weigh how the two relate, while a bi-encoder embedding was computed offline with no knowledge of the query at all. In many RAG systems this is among the largest quality gains per hour of engineering effort, and it is worth stating the two limits alongside that. Cost and latency scale with how many candidates you feed it, so the candidate width is a measured number rather than a default. And it can only reorder what retrieval returned, so candidate recall is a ceiling it cannot lift. The token saving and any deduplication that falls out of it are side effects, not the mechanism.',
     diagramId: 'rag-pipeline',
     citations: cite('waf'),
     origin: 'seed',
@@ -231,7 +232,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
     criticScore: null,
     payload: {
       kind: 'mcq',
-      stem: 'What most improves the agreement between an LLM judge and your human labellers?',
+      stem: 'What most improves the agreement between an LLM judge and your human labelers?',
       choices: [
         { id: 'a', text: 'Swapping "rate the quality" for checkable criteria scored one by one' },
         {
@@ -487,7 +488,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Yes, personalising future leave answers is a real benefit to them',
+          text: 'Yes, personalizing future leave answers is a real benefit to them',
           whyWrong: 'Creates a special category data record with no lawful basis, in a store built for convenience.',
         },
         {
@@ -521,7 +522,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'The base model memorised the policy during pretraining and recalled it',
+          text: 'The base model memorized the policy during pretraining and recalled it',
           whyWrong: 'It cited a specific internal document with a locator, so the text came from the index, not the weights.',
         },
         { id: 'b', text: 'Ingestion runs forward only, so withdrawn documents are never deleted from the index' },
@@ -545,7 +546,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['ai.hybrid_search'],
     difficulty: 'edge',
     explanation:
-      'Lexical and vector scores live on incomparable scales, so you cannot simply add them. Rank-based fusion sidesteps the calibration problem entirely by combining positions rather than scores, which is why it is the usual default. Normalising per result set looks like a fix and is not: the scale then moves with whatever else happened to be returned.',
+      'Lexical and vector scores live on incomparable scales, so you cannot simply add them. Rank-based fusion sidesteps the calibration problem entirely by combining positions rather than scores, which is why it is the usual default. Normalizing per result set looks like a fix and is not: the scale then moves with whatever else happened to be returned.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -567,7 +568,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
         {
           id: 'd',
           text: 'Min-max normalise both across the result set, then average them',
-          whyWrong: 'Normalising per result set makes a document’s score move with whatever else was returned that time.',
+          whyWrong: 'Normalizing per result set makes a document’s score move with whatever else was returned that time.',
         },
       ],
       correctId: 'a',
@@ -579,7 +580,8 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['ai.mcp', 'sec.zero_trust'],
     difficulty: 'deep',
     explanation:
-      'An MCP server runs with whatever credentials it was given, and the model decides when to call it. Scoping those credentials to the minimum, and authorising per-user rather than per-server where the data is user-specific, is what stops a convenient integration becoming a privilege-escalation path. Transport security and tool count are real concerns that sit on a different axis entirely.',
+      'An MCP server runs with whatever credentials it was given, and the model decides when to call it. Scoping those credentials to the minimum, and authorizing per-user rather than per-server where the data is user-specific, is what stops a convenient integration becoming a privilege-escalation path. The protocol points the same direction: a server is treated as a resource server that receives a token issued for it specifically, rather than one it can forward on to the CRM behind it. Transport security and tool count are real concerns that sit on a different axis entirely.',
+    diagramId: 'oauth-obo',
     citations: cite('mcp'),
     origin: 'seed',
     criticScore: null,
@@ -784,7 +786,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
     nodeIds: ['sec.pii', 'ai.observability'],
     difficulty: 'deep',
     explanation:
-      'Full prompt logging is invaluable for debugging and is also a copy of every piece of personal data a user pasted in, sitting in a log store with different retention and different access controls than the system of record. Redacting or tokenising on the way in keeps the structure you debug with, and holding the log to the same retention and access rules as the source data closes the gap the privacy officer is pointing at.',
+      'Full prompt logging is invaluable for debugging and is also a copy of every piece of personal data a user pasted in, sitting in a log store with different retention and different access controls than the system of record. Redacting or tokenizing on the way in keeps the structure you debug with, and holding the log to the same retention and access rules as the source data closes the gap the privacy officer is pointing at.',
     citations: cite('genaiSecurity'),
     origin: 'seed',
     criticScore: null,
@@ -802,7 +804,7 @@ export const DRILL_AI_ENG: DrillItem[] = [
           text: 'Log only requests that error or score badly, since those are what you debug',
           whyWrong: 'Failures skew toward unusual, sensitive input, so you keep precisely the most sensitive slice.',
         },
-        { id: 'c', text: 'Tokenise identifiers before the log write, and match the source retention rules' },
+        { id: 'c', text: 'Tokenize identifiers before the log write, and match the source retention rules' },
         {
           id: 'd',
           text: 'Log a hash of the prompt plus token counts, and drop the text itself',

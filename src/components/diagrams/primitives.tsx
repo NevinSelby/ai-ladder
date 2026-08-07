@@ -146,6 +146,7 @@ export function Node({
     <G>
       <Rect x={x} y={y} width={w} height={h} rx={7} fill={fill} stroke={stroke} strokeWidth={1.2} />
       <SvgText
+        fontFamily={fonts.sansSemi}
         x={x + w / 2}
         y={sub ? y + h / 2 - 1 : y + h / 2 + 3.5}
         fill={theme.text}
@@ -156,6 +157,7 @@ export function Node({
       </SvgText>
       {sub ? (
         <SvgText
+          fontFamily={fonts.sans}
           x={x + w / 2}
           y={y + h / 2 + 10}
           fill={theme.textMuted}
@@ -217,6 +219,7 @@ export function Edge({
       />
       {label ? (
         <SvgText
+          fontFamily={fonts.sans}
           x={(from[0] + to[0]) / 2}
           y={(from[1] + to[1]) / 2 + labelDy}
           fill={stroke}
@@ -270,7 +273,7 @@ export function Boundary({
         strokeWidth={1.2}
         strokeDasharray="5 4"
       />
-      <SvgText x={x + 8} y={y + 12} fill={stroke} fontSize={8} fontWeight="700" letterSpacing={0.4}>
+      <SvgText x={x + 8} y={y + 12} fill={stroke} fontSize={8} fontWeight="700" letterSpacing={0.4} fontFamily={fonts.mono}>
         {label.toUpperCase()}
       </SvgText>
     </G>
@@ -301,7 +304,7 @@ export function Caption({
           ? theme.textFaint
           : theme.textMuted;
   return (
-    <SvgText x={x} y={y} fill={fill} fontSize={8} textAnchor={anchor}>
+    <SvgText x={x} y={y} fill={fill} fontSize={8} textAnchor={anchor} fontFamily={fonts.sans}>
       {text}
     </SvgText>
   );
@@ -322,4 +325,3 @@ export function Blocked({ x, y, theme }: { x: number; y: number; theme: Palette 
   );
 }
 
-export { fonts };

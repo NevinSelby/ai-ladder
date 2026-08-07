@@ -83,8 +83,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['gcp.geap', 'gcp.model_garden'],
     difficulty: 'intro',
     explanation:
-      'The platform is several surfaces with distinct jobs, and customers routinely ask for one while describing another. Being able to place each one in a sentence is the difference between a clear scoping conversation and a vague one.',
-    citations: cite('geap'),
+      'The platform is several surfaces with distinct jobs, and customers routinely ask for one while describing another. Being able to place each one in a sentence is the difference between a clear scoping conversation and a vague one. Watch the first row in particular: Model Garden is the catalog you discover and deploy from, not the inference API itself, and customers who say "Model Garden" when they mean "the model endpoint" are common enough to be worth a gentle correction.',
+    citations: cite('modelGarden', 'geap'),
     origin: 'seed',
     criticScore: null,
     verifiedAt: '2026-07-31',
@@ -92,7 +92,7 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
       kind: 'match',
       stem: 'Match each job to the surface that does it.',
       pairs: [
-        { left: 'Serve first-party and third-party models behind one API', right: 'Model Garden' },
+        { left: 'Discover, evaluate and deploy first-party, partner and open models', right: 'Model Garden' },
         { left: 'Host a deployed agent with sessions and memory', right: 'Agent Engine' },
         { left: 'Author an agent in code with tools and sub-agents', right: 'ADK' },
         { left: 'Screen prompts and responses independently of the model', right: 'Model Armor' },
@@ -376,8 +376,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['gcp.a2a'],
     difficulty: 'core',
     explanation:
-      'An agent card is a public contract: what this agent can do, how to reach it, how to authenticate, and which interaction modes it supports. Internals belong nowhere near it, both because peers should not depend on them and because publishing them hands an attacker a map.',
-    citations: cite('geap'),
+      'An agent card is a public contract: what this agent can do, how to reach it, which authentication schemes it accepts, and which interaction modes and content types it supports. Internals belong nowhere near it, both because peers should not depend on them and because publishing them hands an attacker a map. The test for any field is whether a caller needs it to decide whether and how to delegate, and whether you are willing to be held to it after you change implementations.',
+    citations: cite('a2a'),
     origin: 'seed',
     criticScore: null,
     payload: {
@@ -399,8 +399,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['gcp.a2a', 'ai.agents'],
     difficulty: 'core',
     explanation:
-      'Protocols earn their overhead at boundaries: different teams, different frameworks, different organizations. Inside one process they add serialization, network failure modes and a discovery step in exchange for nothing.',
-    citations: cite('geap', 'mcp'),
+      'Protocols earn their overhead at boundaries: different teams, different frameworks, different organizations. Inside one process they add serialization, network failure modes and a discovery step in exchange for nothing. Keep the two protocols straight while you make this argument, because the colleague will bring them up. MCP standardizes how one agent reaches its tools, resources and prompt templates. A2A standardizes how one agent hands a task to a peer agent. Neither is the lightweight substitute for the other.',
+    citations: cite('a2a', 'mcpArchitecture'),
     origin: 'seed',
     criticScore: null,
     payload: {
@@ -533,7 +533,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['gcp.agent_studio', 'idp.scopes'],
     difficulty: 'deep',
     explanation:
-      'An agent built by someone with broad access, then shared widely, silently lends that access to everyone who uses it. The question is whether queries run as the builder, as a service identity, or as the person asking, and it has to be answered before the share button.',
+      'An agent built by someone with broad access, then shared widely, silently lends that access to everyone who uses it. The question is whether queries run as the builder, as a service identity, or as the person asking, and it has to be answered before the share button. Only the third option keeps the data source’s own permissions doing their job, and it is the one that costs real work to wire up.',
+    diagramId: 'oauth-obo',
     citations: cite('geap'),
     origin: 'seed',
     criticScore: null,
@@ -622,7 +623,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['gcp.vector_search', 'sec.tenancy'],
     difficulty: 'deep',
     explanation:
-      'Approximate search explores a bounded slice of the index. When a tenant owns a thousandth of the corpus, most of what the search visits fails the filter, so a correctly filtered search still under-returns. Widening the candidate search or giving small tenants their own namespace is what fixes it.',
+      'Approximate search explores a bounded slice of the index. When a tenant owns a thousandth of the corpus, most of what the search visits fails the filter, so a correctly filtered search still under-returns. Widening the candidate search or giving small tenants their own namespace is what fixes it, and the second option is the point at which a retrieval problem becomes a tenancy decision.',
+    diagramId: 'tenancy-models',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -739,7 +741,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['gcp.model_armor', 'gcp.geap'],
     difficulty: 'deep',
     explanation:
-      'The teams a CISO is worried about are the ones who never come to the review. A policy floor set above the project, which individual projects can strengthen but not weaken, makes the unscreened state unreachable rather than merely discouraged.',
+      'The teams a CISO is worried about are the ones who never come to the review. A policy floor set above the project, which individual projects can strengthen but not weaken, makes the unscreened state unreachable rather than merely discouraged. This is the same shape as any other org-level guardrail: the constraint is inherited down the resource hierarchy, so a new project created by a team you have never met arrives already covered.',
+    diagramId: 'landing-zone',
     citations: cite('modelArmor'),
     origin: 'seed',
     criticScore: null,
@@ -1531,7 +1534,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['ai.rag_failure', 'sec.tenancy'],
     difficulty: 'deep',
     explanation:
-      'A crawler that ignores permissions builds an index where every document is visible to every query. The model cannot respect an entitlement it was never told about, so access control has to travel with the chunk and be applied inside the search.',
+      'A crawler that ignores permissions builds an index where every document is visible to every query. The model cannot respect an entitlement it was never told about, so access control has to travel with the chunk and be applied inside the search rather than bolted on after it.',
+    diagramId: 'rag-pipeline',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -1895,8 +1899,8 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['ai.mcp'],
     difficulty: 'intro',
     explanation:
-      'MCP has a small vocabulary and customers conflate its parts constantly. Being able to place each primitive in one sentence is what lets you scope an integration conversation instead of nodding along to a vague one.',
-    citations: cite('mcp'),
+      'MCP has a small vocabulary and customers conflate its parts constantly. Being able to place each primitive in one sentence is what lets you scope an integration conversation instead of nodding along to a vague one. These four are the server side of the protocol, which is the part an integration conversation is usually about. There is a client side too, and it has changed more than the server side has, so check the revision your SDK targets before promising a customer any specific client capability.',
+    citations: cite('mcpArchitecture'),
     origin: 'seed',
     criticScore: null,
     payload: {
@@ -2779,7 +2783,7 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
     nodeIds: ['ai.nondeterminism', 'cust.expectations'],
     difficulty: 'deep',
     explanation:
-      'Greedy decoding narrows the distribution, it does not make a hosted model byte-for-byte reproducible across runs, versions or serving stacks. Promising determinism is a commitment you cannot keep, and the customer finds out by diffing two responses.',
+      'Greedy decoding narrows the distribution, it does not make a hosted model byte-for-byte reproducible across runs, versions or serving stacks. Batch composition, kernel selection and the hardware a request lands on all move the result, and none of them is yours to pin. Promising determinism is a commitment you cannot keep, and the customer finds out by diffing two responses. Note also that the knob itself is not a fixture: some current model APIs no longer accept a temperature parameter at all, which is a further reason not to hang a customer commitment on it.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -2787,7 +2791,7 @@ export const DRILL_AI_DEPTH: DrillItem[] = [
       kind: 'mcq',
       stem: 'A team sets temperature to zero and tells the customer the system is now deterministic. What is wrong with that?',
       choices: [
-        { id: 'a', text: 'Temperature zero is not actually supported by most hosted model APIs today', whyWrong: 'It generally is supported. The issue is what is being claimed about it, not whether it can be set.' },
+        { id: 'a', text: 'Temperature zero removes sampling, so any remaining variance is in the prompt', whyWrong: 'Greedy decoding removes sampling variance and leaves batching, kernel choice and serving hardware, none of which lives in the prompt.' },
         { id: 'b', text: 'It narrows variance without guaranteeing identical output across runs' },
         { id: 'c', text: 'Temperature zero degrades output quality on most real-world tasks', whyWrong: 'It changes sampling behavior, and for extraction and classification it is often exactly right. Quality is not the point here.' },
         { id: 'd', text: 'Nothing is wrong: greedy decoding is what determinism means here', whyWrong: 'This is the claim teams make and then walk back the first time a customer diffs two runs of the same input.' },

@@ -64,8 +64,8 @@ export const DRILL_EXPANSION: DrillItem[] = [
     nodeIds: ['gcp.a2a', 'ai.agents'],
     difficulty: 'core',
     explanation:
-      'A2A is an open protocol for agents to discover and call other agents across vendors and frameworks: an agent publishes a card describing its skills, and peers negotiate tasks over a standard wire format. MCP connects one agent to its tools; A2A connects agents to each other.',
-    citations: cite('geap', 'mcp'),
+      'A2A is an open protocol for agents to discover and call other agents across vendors and frameworks: an agent publishes a card describing its skills, its endpoint and how to authenticate, and peers exchange tasks over a standard wire format with an identity you can poll. MCP connects one agent to its tools and data sources; A2A connects an agent to a peer agent. The two are complements rather than competitors, and the same system usually speaks both.',
+    citations: cite('a2a', 'mcpArchitecture'),
     origin: 'seed',
     criticScore: null,
     payload: {
@@ -130,7 +130,8 @@ export const DRILL_EXPANSION: DrillItem[] = [
     nodeIds: ['gcp.vector_search', 'ai.hybrid_search'],
     difficulty: 'deep',
     explanation:
-      'Approximate nearest-neighbor search trades a little recall for a lot of latency and cost, and the knobs (leaf nodes to search, index shape) move you along that curve. The failure mode is silent: nothing errors, the right document simply is not in the candidates.',
+      'Approximate nearest-neighbor search trades a little recall for a lot of latency and cost, and the knobs that widen the search move you along that curve. The failure mode is silent: nothing errors, the right document simply is not in the candidates, and every stage downstream then explains a miss it did not cause.',
+    diagramId: 'rag-pipeline',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -220,7 +221,7 @@ export const DRILL_EXPANSION: DrillItem[] = [
     nodeIds: ['ai.llm_judge', 'ai.evals'],
     difficulty: 'deep',
     explanation:
-      'LLM judges have measurable biases: they favor longer answers, favor the first position in pairwise comparisons, and favor outputs styled like their own. Position randomization, length controls and periodic human calibration are not optional hygiene, they are what makes the judge a measurement instrument instead of a vibe.',
+      'LLM judges carry measurable biases: a pull toward longer answers, a positional preference in pairwise comparisons, and a preference for outputs written in their own style. Note the shape of each claim. Position bias is reliably present, and which position is favored varies by model and by prompt, so the fix is randomizing order and checking that both orders agree rather than correcting for a known direction. Length and self-preference are tendencies, not laws, which is precisely why you measure them on your own data instead of trusting a published finding. Randomization, length controls and periodic human calibration are what make the judge a measurement instrument rather than a vibe.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -265,7 +266,8 @@ export const DRILL_EXPANSION: DrillItem[] = [
     nodeIds: ['ai.mcp', 'idp.scopes'],
     difficulty: 'deep',
     explanation:
-      'An MCP server executes with whatever credentials it holds, and the model decides when to call it. The blast radius of a prompt-injected agent is exactly the union of its tools’ permissions, so every tool follows least privilege: read-only credentials for read tools, scoped writes, and no admin tokens anywhere near the model’s reach.',
+      'An MCP server executes with whatever credentials it holds, and the model decides when to call it. The blast radius of a prompt-injected agent is exactly the union of its tools’ permissions, so every tool follows least privilege: read-only credentials for read tools, scoped writes, and no admin tokens anywhere near the model’s reach. The protocol pushes the same way, treating a server as a resource server that receives a token minted for it specifically rather than one it can forward onward.',
+    diagramId: 'agent-loop',
     citations: cite('mcp'),
     origin: 'seed',
     criticScore: null,
@@ -287,7 +289,7 @@ export const DRILL_EXPANSION: DrillItem[] = [
     nodeIds: ['ai.cost', 'ai.context'],
     difficulty: 'core',
     explanation:
-      'When every request re-sends the same multi-thousand-token system prompt and tool definitions, the stable prefix dominates spend. Prompt caching prices cached input tokens at a fraction of fresh ones, so structuring prompts as stable-prefix-first is often the single largest cost lever in an agent, ahead of model choice.',
+      'When every request re-sends the same multi-thousand-token system prompt and tool definitions, the stable prefix dominates spend, and caching prices those repeated tokens at a fraction of fresh ones. Two qualifiers keep the claim honest. Writing an entry costs more than an uncached token, not less, so caching only pays once the prefix is genuinely reused across requests. And the minimum cacheable prefix, the entry lifetime and the exact discount are per-provider and per-model numbers you look up rather than assume. What is stable across all of them is the mechanic: the cache matches on a prefix, so stable content goes first and anything that varies goes last.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -332,6 +334,7 @@ export const DRILL_EXPANSION: DrillItem[] = [
     difficulty: 'deep',
     explanation:
       'RAG debugging has a canonical order because each stage’s failure masquerades as the next one’s: if ingestion dropped the document, retrieval "fails"; if retrieval missed, generation "hallucinates". Checking generation first, which is where everyone starts, wastes days prompting around a missing chunk.',
+    diagramId: 'rag-pipeline',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -487,6 +490,7 @@ export const DRILL_EXPANSION: DrillItem[] = [
     difficulty: 'deep',
     explanation:
       'Tenancy is a spectrum: shared tables with row-level isolation, schema-per-tenant, database-per-tenant, project-per-tenant. Each step right costs operational complexity and buys blast-radius isolation and cleaner compliance stories. The honest answer to "which one" is a function of tenant count, regulatory exposure and how much ops the team can carry.',
+    diagramId: 'tenancy-models',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -551,18 +555,18 @@ export const DRILL_EXPANSION: DrillItem[] = [
     nodeIds: ['sec.audit', 'gcp.scc'],
     difficulty: 'deep',
     explanation:
-      'Admin Activity audit logs are always on and record configuration changes; Data Access logs record reads of data and mostly need enabling; Access Transparency goes one level further and logs when the cloud provider’s own staff access your resources. Regulated customers ask for all three by name, and the second one being off by default is a classic audit finding.',
-    citations: cite('waf'),
+      'Admin Activity audit logs are always on and record configuration changes; Data Access logs record reads of data and, for most services, have to be turned on first; Access Transparency goes one level further and logs when the cloud provider’s own staff access your resources. Regulated customers ask for all three by name, and the middle one being off by default is a classic audit finding. Know the exception too: BigQuery Data Access logs are on by default and cannot be disabled, so the same question about a BigQuery dataset has a different answer from the same question about a bucket.',
+    citations: cite('auditLogs'),
     origin: 'seed',
     criticScore: null,
     payload: {
       kind: 'mcq',
-      stem: 'A bank’s auditor asks for evidence of every read of a sensitive BigQuery dataset over the past quarter. What determines whether you can produce it?',
+      stem: 'A bank’s auditor asks for evidence of every read of a sensitive Cloud Storage bucket over the past quarter. What determines whether you can produce it?',
       choices: [
-        { id: 'a', text: 'Nothing, since Cloud Audit Logs capture every read already', whyWrong: 'Admin Activity logs are always on; Data Access logs for reads largely are not. This asymmetry is exactly what catches teams.' },
-        { id: 'b', text: 'Whether the dataset was protected with CMEK keys', whyWrong: 'Key management controls decryption. It does not produce a record of who read which rows.' },
-        { id: 'c', text: 'Whether VPC Service Controls wrapped the dataset', whyWrong: 'Perimeters restrict where data can flow; they are not a read-by-read audit record.' },
-        { id: 'd', text: 'Whether Data Access logs were on for BigQuery then' },
+        { id: 'a', text: 'Nothing, since Cloud Audit Logs capture every read already', whyWrong: 'True for BigQuery, whose Data Access logs cannot be turned off, and not for Cloud Storage. Assuming the BigQuery behavior is universal is what catches teams.' },
+        { id: 'b', text: 'Whether the bucket was protected with CMEK keys', whyWrong: 'Key management controls decryption. It does not produce a record of who read which object.' },
+        { id: 'c', text: 'Whether VPC Service Controls wrapped the bucket', whyWrong: 'Perimeters restrict where data can flow; they are not a read-by-read audit record.' },
+        { id: 'd', text: 'Whether Data Access logs were on for Cloud Storage then' },
       ],
       correctId: 'd',
     },
@@ -930,6 +934,7 @@ export const DRILL_EXPANSION: DrillItem[] = [
     difficulty: 'deep',
     explanation:
       'The first slice should traverse the whole system end to end at minimum width, touching the scariest integration on the way, because integration risk is where AI deployments die. A beautiful UI over a mocked backend retires zero risk; an ugly path from real data to real output retires the most.',
+    diagramId: 'thin-slice',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,

@@ -354,7 +354,160 @@ export const DIAGRAMS: Record<DiagramId, ComponentType<DiagramProps>> = {
   'sse-fanout': SseFanout,
   'landing-zone': LandingZone,
   'latency-budget': LatencyBudget,
+  'retry-backoff': RetryBackoff,
+  'cache-stampede': CacheStampede,
+  'hot-partition': HotPartition,
+  'eval-harness': EvalHarness,
+  'expand-contract': ExpandContract,
+  'injection-blast': InjectionBlast,
 };
+
+
+// ── Reliability: the three controls people conflate ────────────────────────
+
+function RetryBackoff({ width }: DiagramProps) {
+  const t = useTheme();
+  return (
+    <DiagramFrame
+      width={width}
+      caption="Deadlines shrink inward, so nobody works for a caller who has already left. Retries need jitter or every client returns together. The breaker exists for the case where retrying at all is the problem.">
+      <Node x={6} y={30} w={72} h={32} label="Edge" sub="10s budget" tone="accent" theme={t} />
+      <Node x={104} y={30} w={72} h={32} label="Service B" sub="8s left" theme={t} />
+      <Node x={202} y={30} w={78} h={32} label="Service C" sub="6s left" theme={t} />
+
+      <Edge from={[78, 46]} to={[102, 46]} theme={t} label="deadline" />
+      <Edge from={[176, 46]} to={[200, 46]} theme={t} label="deadline" />
+
+      <Caption x={144} y={82} text="each hop passes the time that remains" theme={t} anchor="middle" tone="faint" />
+
+      <Node x={6} y={104} w={96} h={32} label="Retry" sub="backoff + jitter" tone="good" theme={t} />
+      <Node x={126} y={104} w={92} h={32} label="Breaker" sub="open on failure" tone="warn" theme={t} />
+      <Node x={238} y={104} w={62} h={32} label="Shed" tone="bad" theme={t} />
+
+      <Edge from={[102, 120]} to={[124, 120]} theme={t} />
+      <Edge from={[218, 120]} to={[236, 120]} tone="bad" theme={t} />
+      <Caption x={150} y={166} text="retrying into an overloaded service adds load to the fire" theme={t} anchor="middle" tone="faint" />
+    </DiagramFrame>
+  );
+}
+
+function CacheStampede({ width }: DiagramProps) {
+  const t = useTheme();
+  return (
+    <DiagramFrame
+      width={width}
+      caption="One TTL expiry releases every waiting request at once, so the cache becomes the cause of the outage. Single-flight lets one request rebuild while the rest wait or read stale.">
+      <Node x={6} y={26} w={78} h={30} label="Requests" sub="all concurrent" theme={t} />
+      <Node x={112} y={26} w={78} h={30} label="Cache" sub="key expired" tone="warn" theme={t} />
+      <Node x={222} y={26} w={78} h={30} label="Database" tone="bad" theme={t} />
+
+      <Edge from={[84, 41]} to={[110, 41]} theme={t} />
+      <Edge from={[190, 34]} to={[220, 34]} tone="bad" theme={t} />
+      <Edge from={[190, 41]} to={[220, 41]} tone="bad" theme={t} />
+      <Edge from={[190, 48]} to={[220, 48]} tone="bad" theme={t} />
+      <Caption x={205} y={70} text="N misses" theme={t} anchor="middle" tone="bad" />
+
+      <Node x={6} y={112} w={78} h={30} label="Requests" theme={t} />
+      <Node x={112} y={112} w={78} h={30} label="Single flight" sub="one rebuilds" tone="good" theme={t} />
+      <Node x={222} y={112} w={78} h={30} label="Database" tone="good" theme={t} />
+
+      <Edge from={[84, 127]} to={[110, 127]} theme={t} />
+      <Edge from={[190, 127]} to={[220, 127]} tone="good" theme={t} />
+      <Caption x={205} y={156} text="1 miss, others serve stale" theme={t} anchor="middle" tone="faint" />
+    </DiagramFrame>
+  );
+}
+
+function HotPartition({ width }: DiagramProps) {
+  const t = useTheme();
+  return (
+    <DiagramFrame
+      width={width}
+      caption="Throughput is provisioned for the table but spent per partition. One popular key saturates its own shard while the others idle, and the table-level metric looks healthy throughout.">
+      <Node x={10} y={34} w={64} h={30} label="Shard 1" sub="4%" theme={t} />
+      <Node x={88} y={34} w={64} h={30} label="Shard 2" sub="96%" tone="bad" theme={t} />
+      <Node x={166} y={34} w={64} h={30} label="Shard 3" sub="6%" theme={t} />
+      <Node x={244} y={34} w={64} h={30} label="Shard 4" sub="3%" theme={t} />
+
+      <Caption x={120} y={84} text="one celebrity key" theme={t} anchor="middle" tone="bad" />
+      <Edge from={[120, 90]} to={[120, 66]} tone="bad" theme={t} />
+
+      <Node x={70} y={116} w={178} h={32} label="Table metric: 27% used" sub="nothing looks wrong" tone="warn" theme={t} />
+      <Caption x={159} y={170} text="fix by spreading the key, not by raising the ceiling" theme={t} anchor="middle" tone="faint" />
+    </DiagramFrame>
+  );
+}
+
+function EvalHarness({ width }: DiagramProps) {
+  const t = useTheme();
+  return (
+    <DiagramFrame
+      width={width}
+      caption="The gate is the point. Without a threshold that can block a release, an eval is a dashboard nobody reads, and production failures are what feed the golden set back.">
+      <Node x={6} y={30} w={80} h={32} label="Golden set" sub="from real traffic" tone="accent" theme={t} />
+      <Node x={112} y={30} w={70} h={32} label="Candidate" sub="prompt + model" theme={t} />
+      <Node x={208} y={30} w={92} h={32} label="Judge" sub="fixed criteria" theme={t} />
+
+      <Edge from={[86, 46]} to={[110, 46]} theme={t} />
+      <Edge from={[182, 46]} to={[206, 46]} theme={t} />
+
+      <Node x={112} y={106} w={70} h={32} label="Gate" sub="threshold" tone="warn" theme={t} />
+      <Node x={6} y={106} w={80} h={32} label="Ship" tone="good" theme={t} />
+      <Node x={208} y={106} w={92} h={32} label="Block" tone="bad" theme={t} />
+
+      <Edge from={[254, 62]} to={[254, 104]} theme={t} />
+      <Edge from={[208, 122]} to={[184, 122]} tone="bad" theme={t} />
+      <Edge from={[110, 122]} to={[88, 122]} tone="good" theme={t} />
+      <Caption x={150} y={166} text="production failures rejoin the golden set" theme={t} anchor="middle" tone="faint" />
+    </DiagramFrame>
+  );
+}
+
+function ExpandContract({ width }: DiagramProps) {
+  const t = useTheme();
+  return (
+    <DiagramFrame
+      width={width}
+      caption="Never ship a change that requires code and schema to deploy in the same instant. Add the new shape, write to both, backfill, move reads, and only then drop the old one.">
+      <Node x={6} y={32} w={68} h={30} label="Expand" sub="add column" tone="good" theme={t} />
+      <Node x={88} y={32} w={68} h={30} label="Dual write" theme={t} />
+      <Node x={170} y={32} w={62} h={30} label="Backfill" theme={t} />
+      <Node x={246} y={32} w={58} h={30} label="Read new" tone="accent" theme={t} />
+
+      <Edge from={[74, 47]} to={[86, 47]} theme={t} />
+      <Edge from={[156, 47]} to={[168, 47]} theme={t} />
+      <Edge from={[232, 47]} to={[244, 47]} theme={t} />
+
+      <Node x={88} y={112} w={140} h={32} label="Contract" sub="drop old column" tone="warn" theme={t} />
+      <Edge from={[275, 62]} to={[275, 112]} theme={t} />
+      <Edge from={[246, 128]} to={[230, 128]} theme={t} />
+      <Caption x={158} y={168} text="every step is independently reversible" theme={t} anchor="middle" tone="faint" />
+    </DiagramFrame>
+  );
+}
+
+function InjectionBlast({ width }: DiagramProps) {
+  const t = useTheme();
+  return (
+    <DiagramFrame
+      width={width}
+      caption="A system prompt is a request, not a control. Assume the model can be persuaded, then bound what it is able to reach: the blast radius is the union of its tools' permissions.">
+      <Node x={6} y={30} w={78} h={32} label="Hostile input" sub="in a ticket" tone="bad" theme={t} />
+      <Node x={112} y={30} w={78} h={32} label="Agent" theme={t} />
+      <Edge from={[84, 46]} to={[110, 46]} tone="bad" theme={t} />
+
+      <Node x={216} y={22} w={88} h={28} label="Admin token" tone="bad" theme={t} />
+      <Node x={216} y={62} w={88} h={28} label="Scoped, read" tone="good" theme={t} />
+      <Edge from={[190, 40]} to={[214, 36]} tone="bad" theme={t} />
+      <Edge from={[190, 52]} to={[214, 76]} tone="good" theme={t} />
+
+      <Caption x={260} y={106} text="deletes everything vs reads one ticket" theme={t} anchor="middle" tone="faint" />
+
+      <Boundary x={104} y={124} h={44} w={200} label="what the grant allows" tone="accent" theme={t} />
+      <Caption x={204} y={152} text="the only boundary that holds" theme={t} anchor="middle" tone="good" />
+    </DiagramFrame>
+  );
+}
 
 export function Diagram({ id, width }: { id: string; width: number }) {
   if (!isDiagramId(id)) return null;

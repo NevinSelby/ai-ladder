@@ -18,6 +18,12 @@ export const DIAGRAM_IDS = [
   'sse-fanout',
   'landing-zone',
   'latency-budget',
+  'retry-backoff',
+  'cache-stampede',
+  'hot-partition',
+  'eval-harness',
+  'expand-contract',
+  'injection-blast',
 ] as const;
 
 export type DiagramId = (typeof DIAGRAM_IDS)[number];
@@ -33,6 +39,12 @@ export const DIAGRAM_TITLES: Record<DiagramId, string> = {
   'sse-fanout': 'Streaming fan-out',
   'landing-zone': 'Landing zone and org policy',
   'latency-budget': 'Latency budget',
+  'retry-backoff': 'Deadlines, retries and the circuit breaker',
+  'cache-stampede': 'What happens when a hot key expires',
+  'hot-partition': 'Why one shard runs hot',
+  'eval-harness': 'The regression gate',
+  'expand-contract': 'Expand, migrate, contract',
+  'injection-blast': 'Blast radius of a prompt-injected agent',
 };
 
 export function isDiagramId(value: string): value is DiagramId {

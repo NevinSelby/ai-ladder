@@ -505,7 +505,7 @@ export const DRILL_FIELD: DrillItem[] = [
     nodeIds: ['data.connectors', 'data.cdc'],
     difficulty: 'deep',
     explanation:
-      'Any modified-since poll is blind to deletions, because a deleted record stops appearing in the result set entirely. CRMs expose a separate mechanism for this: a deleted-records call over a bounded window, or a change event stream that emits delete events. Discovering this after go-live means a warehouse full of ghosts.',
+      'Any modified-since poll is blind to deletions, because a deleted record stops appearing in the result set entirely. Salesforce exposes two separate mechanisms: the getDeleted call, which returns ids deleted inside a bounded window, and Change Data Capture, which emits delete events on a stream. The window is the part that catches people out. getDeleted reaches back no more than fifteen days, and less if an administrator has emptied the recycle bin, so a connector paused over a long change freeze does not just fall behind on deletes, it loses them permanently and needs a full reconciliation to recover. Design the pause budget around that number, not around the queue’s retention.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -835,7 +835,7 @@ export const DRILL_FIELD: DrillItem[] = [
     nodeIds: ['data.rate_limits', 'del.napkin'],
     difficulty: 'deep',
     explanation:
-      'Backfill feasibility is two divisions: records into calls using the page size, then calls into days using the headroom, not the ceiling. Both slips are common, and both are recoverable in the room if you say the units out loud: calls, records per call, calls per day.',
+      'Backfill feasibility is two divisions. First records into calls using the page size: 30,000,000 over 500 is 60,000 calls. Then calls into days using the headroom rather than the ceiling: 1,000,000 minus 985,000 is 15,000 spare calls a day, and 60,000 over 15,000 is four days. Both slips are common, and both are recoverable in the room if you say the units out loud: calls, records per call, calls per day. Say the second one out loud in front of the customer’s admin too, because "we will use your spare 15,000" is a very different conversation from "we will use your million".',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -846,7 +846,7 @@ export const DRILL_FIELD: DrillItem[] = [
         { id: 'a', text: 'About four days: 60,000 calls at 15,000 spare a day' },
         { id: 'b', text: 'Under a day: 60,000 calls against a million allowed', whyWrong: 'Uses the ceiling instead of the headroom. Production already consumes 985,000, leaving about 15,000 calls a day.' },
         { id: 'c', text: 'About thirty days: 30 million against a million a day', whyWrong: 'Compares records to calls and drops the 500-record page size, which is the most common slip in this estimate.' },
-        { id: 'd', text: 'About two months: 30 million at 500,000 records a day', whyWrong: 'Multiplies the wrong pair. Each of the 15,000 spare calls carries 500 records, so 7,500,000 records a day.' },
+        { id: 'd', text: 'About forty days: 60,000 calls at 1,500 spare a day', whyWrong: 'A decimal slip on the headroom. A million minus 985,000 is 15,000 spare calls a day, not 1,500, so this is ten times too long.' },
       ],
       correctId: 'a',
     },

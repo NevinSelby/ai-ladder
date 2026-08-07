@@ -39,7 +39,7 @@ export const DRILL_SCALE_PROD: DrillItem[] = [
     nodeIds: ['scale.pooling', 'gcp.alloydb'],
     difficulty: 'deep',
     explanation:
-      'Each serverless instance opening its own pool multiplies connections by instance count, and Postgres exhausts its connection limit long before the compute tier breaks a sweat. A pooler in front of the database is the standard fix; raising max_connections trades one failure for memory pressure.',
+      'Each serverless instance opens its own pool, so connections multiply by instance count while the compute tier is still comfortable. It bites hardest on Postgres specifically, because Postgres forks a backend process per connection and each one carries its own memory, which is why the ceiling is low and why raising it trades a connection error for an out-of-memory one. An external pooler in transaction mode is the standard fix: it decouples the number of application connections from the number of database backends, so instance count can grow without the database noticing. Capping instances is a legitimate stopgap on the day of the incident, and it is a throughput cap standing in for a pooler you have not deployed yet.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -47,9 +47,9 @@ export const DRILL_SCALE_PROD: DrillItem[] = [
       kind: 'mcq',
       stem: 'Under load your serverless service starts failing with "too many connections" to Postgres. What is the fix?',
       choices: [
-        { id: 'a', text: 'Raise max_connections on the Postgres instance', whyWrong: 'Each connection costs memory. You trade a connection error for an out-of-memory one.' },
+        { id: 'a', text: 'Raise max_connections on the Postgres instance', whyWrong: 'Postgres forks a backend process per connection, so each one costs memory. You trade a connection error for an out-of-memory one.' },
         { id: 'b', text: 'Add a read replica and route queries to it', whyWrong: 'Splits read load and does nothing about connection count from the write path.' },
-        { id: 'c', text: 'Cap the maximum number of concurrent service instances', whyWrong: 'Caps your own throughput to work around a pooling problem you have not fixed.' },
+        { id: 'c', text: 'Cap the maximum number of concurrent service instances', whyWrong: 'A fair stopgap during the incident, and it buys the database room by capping your own throughput rather than by fixing the pooling.' },
         { id: 'd', text: 'A connection pooler, with a small pool per instance' },
       ],
       correctId: 'd',

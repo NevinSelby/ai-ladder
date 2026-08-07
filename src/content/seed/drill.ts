@@ -843,7 +843,7 @@ export const DRILL_SEED: DrillItem[] = [
     nodeIds: ['sec.soc2'],
     difficulty: 'intro',
     explanation:
-      'Type I attests that controls were designed appropriately at a point in time; Type II attests that they operated effectively across a window, typically 3–12 months. Procurement teams asking for "SOC 2" almost always mean Type II, and answering with a Type I report without flagging the difference reads as evasive.',
+      'Type I attests that controls were designed appropriately at a point in time; Type II attests that they operated effectively across a window, typically 3 to 12 months. Procurement teams asking for "SOC 2" almost always mean Type II, and answering with a Type I report without flagging the difference reads as evasive.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -1117,7 +1117,7 @@ export const DRILL_SEED: DrillItem[] = [
     nodeIds: ['cust.explaining_ai', 'cust.expectations', 'ai.nondeterminism'],
     difficulty: 'deep',
     explanation:
-      'Non-technical stakeholders do not need the mechanism, they need to know what to do about it. Reframing from "how accurate is it" to "what happens on the cases it gets wrong, and how would we know" gives them a decision they can actually make, and quietly introduces the review workflow the design needs anyway.',
+      'A flawless demo has just told this VP the answer is yes, so a hedge will be heard as modesty and a lecture will be heard as evasion. The only thing that displaces the impression the demo created is a specific measured number, said plainly, immediately followed by what happens to the remainder. Note the two conditions the answer has to meet: the number has to come from a set you actually scored, not from the demo, and the sentence has to end on the failure path rather than on the success rate. Quote a figure you have not measured and you have simply replaced one unfounded expectation with another that is now attributed to you.',
     citations: cite('waf'),
     origin: 'seed',
     criticScore: null,
@@ -1144,7 +1144,7 @@ export const DRILL_SEED: DrillItem[] = [
         },
         {
           id: 'd',
-          text: '"Four in five go through unaided. The question is the fifth."',
+          text: '"On our set, four in five pass unaided. Plan for the fifth."',
         },
       ],
       correctId: 'd',
