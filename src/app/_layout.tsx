@@ -19,10 +19,6 @@ import { currentSession, initAuthPrefs } from '@/lib/supabase';
 import { AuthGate } from '@/components/auth-gate';
 import { syncNow } from '@/data/sync';
 import {
-  InstrumentSerif_400Regular,
-  InstrumentSerif_400Regular_Italic,
-} from '@expo-google-fonts/instrument-serif';
-import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold,
@@ -56,8 +52,6 @@ function Boot({ children }: { children: React.ReactNode }) {
    * that the app is held together loosely.
    */
   const [fontsReady] = useFonts({
-    InstrumentSerif_400Regular,
-    InstrumentSerif_400Regular_Italic,
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,

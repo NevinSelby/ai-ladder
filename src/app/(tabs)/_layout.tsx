@@ -16,6 +16,7 @@ import {
   IconProgress,
   IconToday,
 } from '@/components/icons';
+import { Sidebar } from '@/components/sidebar';
 import { fonts, radius, space, useLayout, useTheme } from '@/theme';
 import { useMotion } from '@/theme/motion-prefs';
 
@@ -76,6 +77,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      tabBar={side ? (props) => <Sidebar {...props} /> : undefined}
       screenOptions={{
         headerShown: false,
         tabBarPosition: side ? 'left' : 'bottom',

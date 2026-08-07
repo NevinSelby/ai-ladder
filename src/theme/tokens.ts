@@ -117,36 +117,42 @@ export function sequentialStep(fraction: number, scheme: SchemeName): string {
  *
  * Hierarchy comes from weight, size and space, never from hue.
  */
+/**
+ * Slate neutrals with a single blue accent.
+ *
+ * Pure grey was correct to reach for after the pink, but it was inert. A
+ * slightly cool slate ramp reads as considered rather than absent, and one
+ * blue carries every primary action so colour still means something when it
+ * appears. Hierarchy stays carried by weight, size and space.
+ */
 const light = {
   scheme: 'light' as 'light' | 'dark',
-  bg: '#FCFCFC',
+  bg: '#F8FAFC',
   surface: '#FFFFFF',
-  elevated: '#F4F4F5',
-  elevatedActive: '#E9E9EC',
-  border: '#E7E7E9',
-  borderStrong: '#D1D1D6',
-  text: '#0F0F11',
-  textMuted: '#61616B',
-  textFaint: '#9A9AA3',
-  /** Ink, not a brand colour. Used for the one primary action per screen. */
-  accent: '#18181B',
+  elevated: '#F1F5F9',
+  elevatedActive: '#E2E8F0',
+  border: '#E6EBF0',
+  borderStrong: '#CBD5E1',
+  text: '#0F172A',
+  textMuted: '#55637A',
+  textFaint: '#8A97AB',
+  accent: '#2563EB',
   accentText: '#FFFFFF',
-  accentSoft: '#F1F1F3',
-  /** The single point of colour in the product. Used sparingly. */
-  accentAlt: '#2D6BE0',
+  accentSoft: '#EAF0FE',
+  accentAlt: '#0D9488',
   accentWarm: '#B45309',
   positive: '#15803D',
-  positiveSoft: '#EDF7F0',
+  positiveSoft: '#EAF5EE',
   negative: '#B42318',
-  negativeSoft: '#FDF0EF',
+  negativeSoft: '#FDEEEC',
   warning: '#B45309',
-  warningSoft: '#FBF4E9',
+  warningSoft: '#FBF3E7',
   flameDeep: '#C2410C',
   flameMid: '#EA580C',
   flameCore: '#F59E0B',
-  scrim: 'rgba(15,15,17,0.40)',
-  shadow: 'rgba(15,15,17,0.06)',
-  shadowStrong: 'rgba(15,15,17,0.12)',
+  scrim: 'rgba(15,23,42,0.42)',
+  shadow: 'rgba(15,23,42,0.06)',
+  shadowStrong: 'rgba(15,23,42,0.12)',
 };
 
 export type Palette = typeof light;
@@ -167,34 +173,35 @@ export type Palette = typeof light;
  * survives without borders doing all the work.
  */
 /** Dark: the same restraint, inverted through tonal steps rather than flipped. */
+/** Dark: the same slate, stepped tonally, with the accent lifted for contrast. */
 const dark: Palette = {
   scheme: 'dark',
-  bg: '#0A0A0B',
-  surface: '#131315',
-  elevated: '#1B1B1E',
-  elevatedActive: '#252529',
-  border: '#232326',
-  borderStrong: '#37373C',
-  text: '#F4F4F5',
-  textMuted: '#A1A1AA',
-  textFaint: '#71717A',
-  accent: '#FAFAFA',
-  accentText: '#0A0A0B',
-  accentSoft: '#1D1D20',
-  accentAlt: '#6098FF',
+  bg: '#0B1120',
+  surface: '#121A2A',
+  elevated: '#1A2436',
+  elevatedActive: '#243044',
+  border: '#1F2937',
+  borderStrong: '#374253',
+  text: '#E8EDF5',
+  textMuted: '#9AA8BE',
+  textFaint: '#6B7A91',
+  accent: '#6098FF',
+  accentText: '#0B1120',
+  accentSoft: '#152340',
+  accentAlt: '#2DD4BF',
   accentWarm: '#D97706',
   positive: '#4ADE80',
-  positiveSoft: '#112016',
+  positiveSoft: '#0F2018',
   negative: '#F87171',
-  negativeSoft: '#231416',
+  negativeSoft: '#241417',
   warning: '#FBBF24',
-  warningSoft: '#231C10',
+  warningSoft: '#241D10',
   flameDeep: '#EA580C',
   flameMid: '#F97316',
   flameCore: '#FBBF24',
-  scrim: 'rgba(0,0,0,0.68)',
+  scrim: 'rgba(0,0,0,0.66)',
   shadow: 'rgba(0,0,0,0.40)',
-  shadowStrong: 'rgba(0,0,0,0.60)',
+  shadowStrong: 'rgba(0,0,0,0.58)',
 };
 
 export const PALETTES = { light, dark };
@@ -268,11 +275,16 @@ export const elevation = (palette: Palette, level: 0 | 1 | 2 = 1) => {
  * The previous single-family setup read as competent and anonymous. High
  * typographic contrast is the cheapest way to look designed.
  */
+/**
+ * Two faces, used uniformly.
+ *
+ * The display serif is gone. Mixing a high-contrast serif into a dense
+ * interface meant headings and body belonged to different worlds, and the
+ * seam showed on every screen. One sans across the whole product with real
+ * weight steps carries hierarchy perfectly well, and mono is reserved for
+ * anything that is a figure, a label or machine output.
+ */
 export const fonts = {
-  /** Headlines. Set large and tight, never below about 20px. */
-  display: 'InstrumentSerif_400Regular',
-  /** The house voice, for the second half of a split headline. */
-  displayItalic: 'InstrumentSerif_400Regular_Italic',
   sans: 'PlusJakartaSans_400Regular',
   sansMedium: 'PlusJakartaSans_500Medium',
   sansSemi: 'PlusJakartaSans_600SemiBold',
@@ -322,25 +334,25 @@ export const fonts = {
  */
 export const type = {
   hero: {
-    fontSize: 34,
+    fontSize: 32,
     lineHeight: 38,
-    fontWeight: '400' as const,
+    fontWeight: '700' as const,
     letterSpacing: -0.6,
-    fontFamily: fonts.display,
+    fontFamily: fonts.sansBold,
   },
   heroItalic: {
     fontSize: 34,
     lineHeight: 38,
     fontWeight: '400' as const,
     letterSpacing: -0.4,
-    fontFamily: fonts.displayItalic,
+    fontFamily: fonts.sansSemi,
   },
   display: {
-    fontSize: 27,
+    fontSize: 25,
     lineHeight: 31,
-    fontWeight: '400' as const,
+    fontWeight: '700' as const,
     letterSpacing: -0.4,
-    fontFamily: fonts.display,
+    fontFamily: fonts.sansBold,
   },
   /** From here down, the sans. */
   title: {

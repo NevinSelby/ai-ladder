@@ -124,7 +124,7 @@ export default function TodayScreen() {
               celebrate={justFinished}
             />
           </Tooltip>
-          <ProfileButton />
+          {layout.desktop ? null : <ProfileButton />}
         </Row>
       </Row>
 
@@ -151,7 +151,7 @@ export default function TodayScreen() {
 
           <View>
             <Text variant="hero">{greeting()}</Text>
-            <Text variant="heroItalic" style={{ marginTop: -6 }}>
+            <Text variant="hero" tone="textMuted" style={{ marginTop: -4 }}>
               {profile.username ?? profile.displayName ?? 'welcome back'}
             </Text>
           </View>
