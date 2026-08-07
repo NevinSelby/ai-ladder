@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -122,14 +123,14 @@ export default function FlawSession() {
   // Number keys pick a line, Escape leaves, Enter continues once revealed.
   const shortcuts = useMemo(() => {
     const map: Record<string, (() => void) | undefined> = {
-      Escape: () => router.back(),
+      Escape: () => goBack('/practice'),
     };
     if (item && !revealed && !alreadySolved) {
       item.payload.lines.forEach((_, i) => {
         map[String(i + 1)] = () => void commit(i);
       });
     }
-    if (revealed) map.Enter = () => router.back();
+    if (revealed) map.Enter = () => goBack('/practice');
     return map;
   }, [item, revealed, alreadySolved, commit]);
 
@@ -159,7 +160,7 @@ export default function FlawSession() {
             Spot the Flaw has no items matching your cloud selection. Change it in Profile, or
             pick another mode.
           </Text>
-          <Button title="Back" size="lg" full onPress={() => router.back()} />
+          <Button title="Back" size="lg" full onPress={() => goBack('/practice')} />
         </Stack>
       </View>
     );
@@ -174,7 +175,7 @@ export default function FlawSession() {
 
       <View style={{ paddingHorizontal: space.lg, gap: space.sm }}>
         <Row justify="space-between" align="center">
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={() => goBack('/practice')} hitSlop={12}>
             <Text variant="eyebrow" tone="textFaint">
               CLOSE
             </Text>
@@ -333,7 +334,7 @@ export default function FlawSession() {
           backgroundColor: theme.surface,
         }}>
         {revealed || alreadySolved ? (
-          <Button title="Done" size="lg" full onPress={() => router.back()} />
+          <Button title="Done" size="lg" full onPress={() => goBack('/practice')} />
         ) : (
           <Text variant="caption" tone="textFaint" center>
             Pick the line that breaks the requirement. One guess.

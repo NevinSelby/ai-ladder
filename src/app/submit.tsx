@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -119,7 +120,7 @@ export default function SubmitScreen() {
     <View style={{ flex: 1, backgroundColor: theme.bg, paddingTop: insets.top + space.sm }}>
       <View style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => goBack('/learn')}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="Go back"

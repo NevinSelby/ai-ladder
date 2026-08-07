@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as Application from 'expo-application';
 import { router } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useState } from 'react';
 import { ScrollView, Switch, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -162,7 +163,7 @@ export default function ProfileScreen() {
     setResetting(false);
     setConfirmReset(false);
     refresh();
-    router.back();
+    goBack('/you');
   };
 
   return (
@@ -170,7 +171,7 @@ export default function ProfileScreen() {
       <View style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
         <Row gap={space.md} align="center">
           <Tappable
-            onPress={() => router.back()}
+            onPress={() => goBack('/you')}
             accessibilityLabel="Go back"
             height={36}
             style={{

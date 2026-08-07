@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -365,7 +366,7 @@ export default function DrillSession() {
         dailyBonus={outcome.dailyBonus}
         milestone={outcome.milestone}
         streakDays={profile.streakDays}
-        onDone={() => router.back()}
+        onDone={() => goBack('/')}
       />
     );
   }

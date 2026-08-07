@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -73,14 +74,14 @@ export default function LessonScreen() {
     await completeLesson(db, lesson.id, seconds);
     setDone(true);
     refresh();
-    router.back();
+    goBack('/learn');
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg, paddingTop: insets.top + space.sm }}>
       <View style={{ paddingHorizontal: space.lg }}>
         <Row justify="space-between" align="center">
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={() => goBack('/learn')} hitSlop={12}>
             <Text variant="eyebrow" tone="textFaint">
               CLOSE
             </Text>
@@ -212,7 +213,7 @@ export default function LessonScreen() {
             kind={done ? 'secondary' : 'primary'}
             size="lg"
             full
-            onPress={done ? () => router.back() : finish}
+            onPress={done ? () => goBack('/learn') : finish}
             right={
               done ? (
                 <IconCheck color={theme.text} size={18} />

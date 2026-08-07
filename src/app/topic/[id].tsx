@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,7 +58,7 @@ export default function TopicScreen() {
           <Text variant="small" tone="textMuted">
             There is no concept with the id "{id.slice(0, 60)}". It may have been renamed.
           </Text>
-          <Button title="Back" size="lg" full onPress={() => router.back()} />
+          <Button title="Back" size="lg" full onPress={() => goBack('/practice')} />
         </Stack>
       </View>
     );
@@ -70,7 +71,7 @@ export default function TopicScreen() {
     <View style={{ flex: 1, backgroundColor: theme.bg, paddingTop: insets.top + space.sm }}>
       <View style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => goBack('/practice')}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="Go back"

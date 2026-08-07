@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, View } from 'react-native';
 import Animated, {
@@ -280,7 +281,7 @@ export default function ArenaSession() {
         </Animated.View>
         <View style={{ flex: 1 }} />
         <View style={{ paddingBottom: Math.max(insets.bottom, space.lg) }}>
-          <Button title="Done" size="lg" full onPress={() => router.back()} />
+          <Button title="Done" size="lg" full onPress={() => goBack('/')} />
         </View>
       </View>
     );

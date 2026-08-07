@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { goBack } from '@/lib/navigation';
 import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -138,7 +139,7 @@ export default function AuthScreen() {
     await restoreFromAccount(db);
     refresh();
     setBusy(false);
-    router.back();
+    router.replace('/');
   };
 
   const submit = async () => {
@@ -184,14 +185,14 @@ export default function AuthScreen() {
     await restoreFromAccount(db);
     refresh();
     setBusy(false);
-    router.back();
+    router.replace('/');
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg, paddingTop: insets.top + space.sm }}>
       <View style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
         <Tappable
-          onPress={() => router.back()}
+          onPress={() => goBack('/welcome')}
           accessibilityLabel="Go back"
           height={36}
           style={{
