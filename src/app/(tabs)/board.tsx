@@ -142,8 +142,8 @@ export default function BoardScreen() {
 
       <Spacer size={space.lg} />
       <Text variant="caption" tone="textFaint" center>
-        Expectations only rise when you promise more than you can hold. A hot bar makes every
-        later session on that account harder.
+        Expectations only rise when you promise more than you can hold, and an account cannot
+        move to its next phase while they stay high.
       </Text>
       <Spacer />
     </Screen>
@@ -224,9 +224,9 @@ function WhatIsThis() {
           <Text variant="small">
             Every account carries two bars. <Text variant="smallStrong">Health</Text> is how well
             the engagement is going. <Text variant="smallStrong">Expectations</Text> is how much
-            you have promised, and it only ever goes up when you overpromise. A high expectations
-            bar makes every later session harder to pass, which is the honest simulation of what
-            overpromising actually costs you.
+            you have promised, and it only ever goes up when you overpromise. An account advances a
+            phase only once health is high and expectations are back under control, so
+            overpromising costs you progress rather than points.
           </Text>
           <Text variant="small" tone="textMuted">
             Open an account to see its constraints and the full history of what moved it.

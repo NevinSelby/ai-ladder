@@ -206,6 +206,10 @@ export function meterColor(key: MeterKey, scheme: SchemeName): string {
 
 /** 4pt base scale, named by intent rather than arithmetic. */
 export const space = {
+  /** Between top-level sections of a screen. */
+  section: 40,
+  /** Between blocks inside a section. */
+  block: 24,
   xs: 4,
   sm: 8,
   md: 12,
@@ -304,85 +308,93 @@ export const fonts = {
  * Serif line-heights sit below 1.0 at the top end, which is normal for
  * display setting and wrong for anything you actually read.
  */
+/**
+ * The scale.
+ *
+ * Steps are proportional rather than dramatic. The previous scale jumped from a
+ * 52px serif straight to 16px body, which is a cliff, not a hierarchy: it made
+ * headlines collide with themselves at phone width and left everything below
+ * them looking cramped by comparison.
+ *
+ * The serif is reserved for hero and display. From `title` down everything is
+ * the sans, because a high-contrast serif at 17px in a dense list reads as
+ * fussy rather than considered.
+ */
 export const type = {
-  /** Split-headline scale. One word per line, deliberately. */
   hero: {
-    fontSize: 52,
-    lineHeight: 50,
-    fontWeight: '400' as const,
-    letterSpacing: -1.8,
-    fontFamily: fonts.display,
-  },
-  /** The italic half of a split headline. */
-  heroItalic: {
-    fontSize: 52,
-    lineHeight: 50,
-    fontWeight: '400' as const,
-    letterSpacing: -1.2,
-    fontFamily: fonts.displayItalic,
-  },
-  display: {
-    fontSize: 38,
-    lineHeight: 39,
-    fontWeight: '400' as const,
-    letterSpacing: -1.1,
-    fontFamily: fonts.display,
-  },
-  title: {
-    fontSize: 27,
-    lineHeight: 30,
+    fontSize: 34,
+    lineHeight: 38,
     fontWeight: '400' as const,
     letterSpacing: -0.6,
     fontFamily: fonts.display,
   },
-  /** Subheads switch to the sans: a serif this small loses its contrast. */
-  heading: {
-    fontSize: 18,
-    lineHeight: 25,
+  heroItalic: {
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: '400' as const,
+    letterSpacing: -0.4,
+    fontFamily: fonts.displayItalic,
+  },
+  display: {
+    fontSize: 27,
+    lineHeight: 31,
+    fontWeight: '400' as const,
+    letterSpacing: -0.4,
+    fontFamily: fonts.display,
+  },
+  /** From here down, the sans. */
+  title: {
+    fontSize: 21,
+    lineHeight: 26,
     fontWeight: '600' as const,
     letterSpacing: -0.3,
     fontFamily: fonts.sansSemi,
   },
+  heading: {
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: '600' as const,
+    letterSpacing: -0.15,
+    fontFamily: fonts.sansSemi,
+  },
   question: {
-    fontSize: 19,
-    lineHeight: 29,
+    fontSize: 18,
+    lineHeight: 28,
     fontWeight: '500' as const,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
     fontFamily: fonts.sansMedium,
   },
-  body: { fontSize: 16, lineHeight: 26, fontWeight: '400' as const, fontFamily: fonts.sans },
+  body: { fontSize: 15.5, lineHeight: 25, fontWeight: '400' as const, fontFamily: fonts.sans },
   bodyStrong: {
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 15.5,
+    lineHeight: 25,
     fontWeight: '600' as const,
     fontFamily: fonts.sansSemi,
   },
-  small: { fontSize: 14.5, lineHeight: 23, fontWeight: '400' as const, fontFamily: fonts.sans },
+  small: { fontSize: 14, lineHeight: 22, fontWeight: '400' as const, fontFamily: fonts.sans },
   smallStrong: {
-    fontSize: 14.5,
-    lineHeight: 23,
+    fontSize: 14,
+    lineHeight: 22,
     fontWeight: '600' as const,
     fontFamily: fonts.sansSemi,
   },
   caption: { fontSize: 12.5, lineHeight: 18, fontWeight: '400' as const, fontFamily: fonts.sans },
-  /** Masthead labels: mono, tracked wide, always uppercase. */
   eyebrow: {
     fontSize: 10.5,
     lineHeight: 14,
     fontWeight: '500' as const,
-    letterSpacing: 1.8,
+    letterSpacing: 1.4,
     fontFamily: fonts.mono,
   },
-  /** Oversized rank and stat figures, as in 01 / 02 / 03. */
   numeric: {
-    fontSize: 34,
-    lineHeight: 36,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700' as const,
-    letterSpacing: -1.4,
+    letterSpacing: -0.8,
     fontFamily: fonts.monoBold,
   },
   numericSm: {
-    fontSize: 14,
+    fontSize: 13.5,
     lineHeight: 20,
     fontWeight: '500' as const,
     fontFamily: fonts.mono,

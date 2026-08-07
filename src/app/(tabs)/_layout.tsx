@@ -160,9 +160,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="progress"
+        name="you"
         options={{
-          title: 'Progress',
+          title: 'You',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon Icon={IconProgress} color={color} focused={focused} />
           ),

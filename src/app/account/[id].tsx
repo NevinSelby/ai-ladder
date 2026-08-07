@@ -140,7 +140,7 @@ export default function AccountScreen() {
                 <Bar value={expectations / 100} color={tone(eb.tone)} height={9} />
                 <Text variant="caption" tone="textFaint">
                   {eb.label}, rises when you miss a question about setting or managing
-                  expectations. High expectations make everything later harder.
+                  expectations. High expectations hold the account in its current phase.
                 </Text>
               </Stack>
             </Stack>

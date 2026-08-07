@@ -9,14 +9,11 @@ import {
   BranchProgress,
   CalendarHeatmap,
   MeterBars,
-  ProgressRing,
   Sparkline,
 } from '@/components/charts';
 import { IconFlame, IconTrophy } from '@/components/icons';
-import { Breathe } from '@/components/ambient';
 import { StreakFlame } from '@/components/streak-flame';
 import { Tooltip } from '@/components/tooltip';
-import { MeterRadar } from '@/components/meters';
 import { Button, Card, Chip, Divider, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { attemptSummary } from '@/data/attempts';
 import { lessonStats, recentDays, streakSummary, type DayRecord } from '@/data/learning';
@@ -37,7 +34,9 @@ import {
   useTheme,
   radius,
 } from '@/theme';
-import { LEVELS, levelProgress, shadowLevel } from '@shared/progression';
+import { levelProgress, shadowLevel } from '@shared/progression';
+import { CLOUD_META } from '@/data/profile';
+import { SectionLabel } from '@/components/surface';
 import type { MeterKey } from '@shared/taxonomy';
 
 /**
@@ -48,7 +47,7 @@ import type { MeterKey } from '@shared/taxonomy';
  * has somewhere the eye can rest and the shape of your practice is legible at
  * a glance rather than read.
  */
-export default function ProgressScreen() {
+export default function YouScreen() {
   const theme = useTheme();
   const scheme = useScheme();
   const refresh = useRefreshAppState();
@@ -130,7 +129,7 @@ export default function ProgressScreen() {
       <Animated.View entering={FadeIn.duration(motion.slow)}>
         <Stack gap={space.xs}>
           <Eyebrow>Standing</Eyebrow>
-          <Text variant="display">Progress</Text>
+          <Text variant="display">You</Text>
         </Stack>
       </Animated.View>
 
@@ -150,13 +149,6 @@ export default function ProgressScreen() {
       <Animated.View entering={FadeInDown.duration(motion.slow).delay(60)}>
         <Card>
           <Row justify="space-around" align="center">
-            <Breathe amount={0.025} period={4000}>
-              <ProgressRing
-                fraction={progress.fraction}
-                label={`${Math.round(progress.fraction * 100)}%`}
-                caption={progress.next ? `to ${progress.next.title.split(' ')[0]}` : 'maxed'}
-              />
-            </Breathe>
             <View style={{ alignItems: 'center', gap: 4 }}>
               <Tooltip
                 title="Daily streak"
@@ -274,14 +266,6 @@ export default function ProgressScreen() {
                 Tap a bar to see what feeds that meter.
               </Text>
             )}
-            <Divider />
-            <View style={{ alignItems: 'center' }}>
-              <MeterRadar meters={profile.meters} size={Math.min(240, cardInner)} />
-            </View>
-            <Text variant="caption" tone="textFaint" center>
-              A balanced practitioner draws a regular pentagon. A spike means one meter is
-              carrying you.
-            </Text>
             {shadow.index > progress.level.index ? (
               <Text variant="caption" color={blockedTint} center>
                 Your strongest meter alone would be {shadow.title}. That gap is the cost of the
@@ -472,41 +456,32 @@ export default function ProgressScreen() {
         </Card>
       </Animated.View>
 
-      <Spacer size={space.md} />
+      <Spacer size={space.section} />
 
-      {/* ── The ladder ── */}
-      <Animated.View entering={FadeInDown.duration(motion.slow).delay(420)}>
+      {/* ── Account ──
+          Identity and settings live at the foot of this screen because they
+          belong to the same subject as everything above: this person. The full
+          settings page stays a route for the top-right avatar. */}
+      <Animated.View entering={FadeInDown.duration(motion.slow).delay(440)}>
+        <SectionLabel label="Account" width={cardInner} />
+        <Spacer size={space.md} />
         <Card>
           <Stack gap={space.md}>
-            <Eyebrow>The ladder</Eyebrow>
-            {LEVELS.map((level) => {
-              const reached = level.index <= progress.level.index;
-              const current = level.index === progress.level.index;
-              return (
-                <Row key={level.index} gap={space.md} align="center">
-                  <View
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 13,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: reached ? theme.accent : theme.elevated,
-                    }}>
-                    <Text variant="caption" color={reached ? theme.accentText : theme.textFaint}>
-                      {level.index + 1}
-                    </Text>
-                  </View>
-                  <Text
-                    variant={current ? 'bodyStrong' : 'small'}
-                    tone={reached ? 'text' : 'textFaint'}
-                    style={{ flex: 1 }}>
-                    {level.title}
-                  </Text>
-                  {current ? <Chip label="you" color={theme.accent} filled /> : null}
-                </Row>
-              );
-            })}
+            <Row justify="space-between" align="center">
+              <Stack gap={2} style={{ flex: 1 }}>
+                <Text variant="bodyStrong">
+                  {profile.username ?? profile.displayName ?? 'Signed in'}
+                </Text>
+                <Text variant="caption" tone="textFaint">
+                  {CLOUD_META[profile.cloudPreference].label} questions
+                </Text>
+              </Stack>
+              <Button
+                title="Settings"
+                kind="secondary"
+                onPress={() => router.push('/profile')}
+              />
+            </Row>
           </Stack>
         </Card>
       </Animated.View>

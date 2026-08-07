@@ -99,7 +99,7 @@ export default function PracticeScreen() {
         <Eyebrow>Modes</Eyebrow>
         <Text variant="display">Practice</Text>
         <Text variant="small" tone="textMuted">
-          Nine ways to be wrong in private instead of in front of a customer.
+          Ten ways to be wrong in private instead of in front of a customer.
         </Text>
       </Stack>
 

@@ -15,7 +15,6 @@ import { IconArrowRight,
 import { Wordmark } from '@/components/logo';
 import { Tappable } from '@/components/tappable';
 import { StreakFlame } from '@/components/streak-flame';
-import { MeterList } from '@/components/meters';
 import { Bar, Button, Card, Chip, Divider, Eyebrow, Row, Screen, Spacer, Stack, Text } from '@/components/ui';
 import { ACCOUNTS_BY_ID, healthBand } from '@/content/accounts';
 import { setDailyGoal } from '@/data/profile';
@@ -43,7 +42,6 @@ import { useMotion } from '@/theme/motion-prefs';
 /** Modes not yet wired up. Shown locked rather than hidden, so the app is honest
  *  about where it is going instead of pretending the drill is the whole product. */
 /** Modes with a runner today. Practice lists the full set with status. */
-const QUICK: Mode[] = ['arena'];
 
 export default function TodayScreen() {
   const theme = useTheme();
@@ -158,14 +156,9 @@ export default function TodayScreen() {
             </Text>
           </View>
 
-          <Row gap={space.lg} align="center">
-            <Text variant="eyebrow" tone="textFaint">
-              RUNG {progress.level.index + 1} / {LEVELS.length}
-            </Text>
-            <Text variant="eyebrow" tone="textFaint">
-              {profile.streakDays} DAY STREAK
-            </Text>
-          </Row>
+          <Text variant="eyebrow" tone="textFaint">
+            RUNG {progress.level.index + 1} OF {LEVELS.length}
+          </Text>
         </View>
       </Stagger>
 
@@ -289,40 +282,6 @@ export default function TodayScreen() {
 
       <Spacer size={space.lg} />
 
-      {/* ── Standing ── */}
-      <Card>
-        <Stack gap={space.md}>
-          <Row justify="space-between" align="baseline">
-            <Eyebrow>Standing</Eyebrow>
-            <Text variant="caption" tone="textFaint">
-              gated by weakest meter
-            </Text>
-          </Row>
-
-          <Row justify="space-between" align="flex-end">
-            <Text variant="title">{progress.level.title}</Text>
-            <Text variant="numericSm" tone="textMuted">
-              {Math.round(progress.fraction * 100)}%
-            </Text>
-          </Row>
-
-          <Bar value={progress.fraction} color={theme.accent} height={8} />
-
-          {progress.next ? (
-            <Text variant="caption" color={meterColor(progress.blockedBy, scheme)}>
-              {progress.next.title} needs your weakest meter, {METER_META[progress.blockedBy].label},
-              to gain {progress.deficit.toLocaleString()} more XP. Session XP splits across all five
-              meters, so only the share landing there counts.
-            </Text>
-          ) : null}
-
-          <Divider style={{ marginVertical: space.xs }} />
-          <MeterList meters={profile.meters} highlight={progress.blockedBy} />
-        </Stack>
-      </Card>
-
-      <Spacer size={space.lg} />
-
       {/* ── Account needing attention ── */}
       {weakest && weakestRow ? (
         <Pressable onPress={() => router.push('/board')}>
@@ -354,38 +313,6 @@ export default function TodayScreen() {
 
       <Spacer size={space.lg} />
 
-      {/* ── What else is coming ── */}
-      <Eyebrow>Quick practice</Eyebrow>
-      <Spacer size={space.sm} />
-      <Stack gap={space.sm}>
-        {QUICK.map((mode) => (
-          <Pressable
-            key={mode}
-            onPress={() => router.push('/session/arena')}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: space.md,
-              padding: space.md,
-              borderRadius: radius.md,
-              borderWidth: 1,
-              borderColor: theme.border,
-              backgroundColor: theme.surface,
-            }}>
-            <IconArrowRight color={theme.accent} size={17} />
-            <View style={{ flex: 1 }}>
-              <Text variant="smallStrong">{MODE_META[mode].label}</Text>
-              <Text variant="caption" tone="textFaint">
-                {MODE_META[mode].tagline}
-              </Text>
-            </View>
-            <Chip
-              label={`${mode === 'drill' ? drillMinutes(profile.dailyGoal) : MODE_META[mode].minutes} min`}
-              color={theme.textFaint}
-            />
-          </Pressable>
-        ))}
-      </Stack>
 
       <Spacer />
     </Screen>
@@ -584,37 +511,6 @@ function QuestCard() {
   );
 }
 
-function StreakPill({ days, atRisk }: { days: number; atRisk: boolean }) {
-  const theme = useTheme();
-  const tint = days === 0 ? theme.textFaint : atRisk ? theme.warning : theme.accent;
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: space.md,
-        paddingVertical: space.sm,
-        borderRadius: radius.pill,
-        backgroundColor: tint + '1C',
-        borderWidth: 1,
-        borderColor: tint + '44',
-      }}>
-      <IconFlame color={tint} size={16} />
-      <Text variant="numericSm" color={tint}>
-        {days}
-      </Text>
-    </View>
-  );
-}
-
-
-/**
- * Profile entry point.
- *
- * Top right is where people look for an account, so it goes there rather than
- * behind the logo.
- */
 function ProfileButton() {
   const theme = useTheme();
   return (

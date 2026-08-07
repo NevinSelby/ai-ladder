@@ -66,7 +66,22 @@ function impactFor(item: ContentItem, score: number): { health: number; expectat
   const weight = item.difficulty === 'edge' ? 3 : item.difficulty === 'deep' ? 2 : 1;
 
   if (score >= 1) return { health: weight, expectations: overpromise ? -weight : 0 };
-  if (score > 0) return { health: 0, expectations: 0 };
+  /**
+   * Partial credit moves the board partially.
+   *
+   * This used to return zero, which meant a half-correct multi-select produced
+   * no health change *and no timeline row*, so the account history silently
+   * omitted answers the player had actually given. Scaling around the halfway
+   * mark keeps the sign honest: better than half helps, worse than half hurts.
+   */
+  if (score > 0) {
+    const signed = (score - 0.5) * 2;
+    const health = Math.round(weight * signed);
+    return {
+      health,
+      expectations: overpromise ? Math.round(-weight * signed) : 0,
+    };
+  }
   // A miss on an expectation-setting topic raises what you have promised rather
   // than lowering health: the damage shows up later, which is the lesson.
   return overpromise
@@ -99,7 +114,9 @@ export async function applyAttemptsToBoard(
     if (!accountId) continue;
 
     const delta = impactFor(result.item, result.score);
-    if (delta.health === 0 && delta.expectations === 0) continue;
+    // No early exit on a zero delta. An exactly-half answer moves nothing, but
+    // it still happened, and a timeline that omits answers is a timeline the
+    // player cannot trust.
 
     const account = ACCOUNTS_BY_ID[accountId];
     const verdict = result.score >= 1 ? 'Handled well' : result.score > 0 ? 'Partly right' : 'Got this wrong';

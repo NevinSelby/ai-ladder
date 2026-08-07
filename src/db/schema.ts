@@ -173,7 +173,7 @@ export const accounts = sqliteTable('accounts', {
   phase: text('phase').notNull().default('discovery'),
   /** 0..100. Hits zero and the account churns. */
   health: integer('health').notNull().default(70),
-  /** 0..100. Rises when you overpromise; makes every later session harder. */
+  /** 0..100. Rises when you overpromise; blocks the next phase while high. */
   expectations: integer('expectations').notNull().default(40),
   status: text('status').notNull().default('active'),
   updatedAt: text('updated_at').notNull(),

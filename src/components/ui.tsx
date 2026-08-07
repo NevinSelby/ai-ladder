@@ -217,10 +217,10 @@ interface CardProps extends ViewProps {
   /**
    * How much container this block gets.
    *
-   * `bare` is the default and draws nothing: the block is defined by the space
-   * around it and the type inside it. `panel` adds a quiet fill for something
-   * genuinely inset, such as a form. `raised` is the old card and exists for
-   * the one hero block per screen.
+   * `panel` is the default: a quiet fill that groups related rows so a list
+   * reads as one object rather than as loose text. `bare` draws nothing and is
+   * for a row *inside* a panel. `raised` is the lifted treatment and belongs to
+   * at most one hero block per screen.
    */
   surface?: 'bare' | 'panel' | 'raised';
   /** Deprecated alias for `surface`, kept so existing call sites still build. */
@@ -251,7 +251,7 @@ export function Card({
   const theme = useTheme();
   // Old numeric levels map onto the new vocabulary, so call sites did not have
   // to change: only an explicit level 2 still asks to be lifted.
-  const mode: 'bare' | 'panel' | 'raised' = surface ?? (level === 2 ? 'raised' : 'bare');
+  const mode: 'bare' | 'panel' | 'raised' = surface ?? (level === 2 ? 'raised' : 'panel');
 
   const container =
     mode === 'raised'
@@ -291,7 +291,8 @@ export function Card({
           padded
             ? {
                 paddingVertical: mode === 'bare' ? 0 : space.lg,
-                paddingHorizontal: mode === 'bare' ? (accent ? space.lg : 0) : space.lg,
+                paddingHorizontal:
+                  mode === 'bare' ? (accent ? space.md : 0) : space.lg,
               }
             : undefined
         }>

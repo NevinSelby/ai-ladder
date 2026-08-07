@@ -66,7 +66,13 @@ export const ACCOUNTS: AccountDef[] = [
       'Epic integration queue: 6 months',
       'Clinician trust is the real gate',
     ],
-    emphasis: ['security_compliance', 'customer_craft', 'delivery_economics'],
+    emphasis: [
+      'security_compliance',
+      'customer_craft',
+      'delivery_economics',
+      'identity_access',
+      'gcp_foundations',
+    ],
   },
   {
     id: 'kestrel',
@@ -83,7 +89,14 @@ export const ACCOUNTS: AccountDef[] = [
       'Three incompatible label sets',
       'One source system is batch-only',
     ],
-    emphasis: ['data_integration', 'security_compliance', 'delivery_economics'],
+    emphasis: [
+      'data_integration',
+      'security_compliance',
+      'delivery_economics',
+      'scaling_reliability',
+      'aws_foundations',
+      'azure_foundations',
+    ],
   },
   {
     id: 'arbor',
@@ -100,7 +113,13 @@ export const ACCOUNTS: AccountDef[] = [
       'Compliance function not yet engaged',
       'Human must remain the decision-maker',
     ],
-    emphasis: ['ai_engineering', 'security_compliance', 'customer_craft'],
+    emphasis: [
+      'ai_engineering',
+      'security_compliance',
+      'customer_craft',
+      'gcp_ai_platform',
+      'azure_ai_platform',
+    ],
   },
   {
     id: 'northwind',
@@ -117,7 +136,14 @@ export const ACCOUNTS: AccountDef[] = [
       'Telematics dropouts in rural areas',
       'No agreed accuracy baseline',
     ],
-    emphasis: ['data_integration', 'ai_engineering', 'customer_craft'],
+    emphasis: [
+      'data_integration',
+      'ai_engineering',
+      'customer_craft',
+      'productionizing',
+      'client_engineering',
+      'aws_ai_platform',
+    ],
   },
 ];
 

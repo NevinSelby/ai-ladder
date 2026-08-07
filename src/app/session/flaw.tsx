@@ -5,6 +5,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Confetti } from '@/components/celebrate';
+import { applyAttemptsToBoard } from '@/data/accounts';
 import { useConfirmExit } from '@/components/confirm-exit';
 import { DifficultyTag } from '@/components/difficulty-tag';
 import { IconCheck, IconCross, IconEye, IconLink } from '@/components/icons';
@@ -98,6 +99,11 @@ export default function FlawSession() {
       const gains: Partial<Record<MeterKey, number>> = { [planned.meter]: planned.xp };
       await applySessionResult(db, gains);
       await recordDay(db, { sessions: 1, xp: planned.xp, itemsAnswered: 1 });
+      // Spot the Flaw was the one session mode that never reached the board,
+      // so puzzles vanished from every account timeline.
+      await applyAttemptsToBoard(db, [
+        { item: planned.params.item, score: planned.score, attemptId: planned.id },
+      ]);
       void syncNow(db).catch(() => {});
       setBanked(true);
       refresh();
