@@ -8,6 +8,7 @@ import { LadderCard } from '@/components/climb';
 import {
   BranchProgress,
   CalendarHeatmap,
+  WeekdayRhythm,
   MeterBars,
   Sparkline,
 } from '@/components/charts';
@@ -25,6 +26,7 @@ import { db } from '@/db';
 import { useProfile, useRefreshAppState } from '@/hooks/use-app-state';
 import {
   MAX_CONTENT_WIDTH,
+  METER_KEYS,
   useLayout,
   METER_META,
   meterColor,
@@ -72,7 +74,7 @@ export default function YouScreen() {
 
   const { data: days = [] } = useQuery({
     queryKey: ['app-state', 'days'],
-    queryFn: () => recentDays(db, 120),
+    queryFn: () => recentDays(db, 400),
     placeholderData: [],
   });
   const { data: summary = { total: 0, last7Days: 0, averageScore: 0 } } = useQuery({
@@ -107,6 +109,7 @@ export default function YouScreen() {
   const cardInner = inner - space.lg * 2;
 
   const progress = levelProgress(profile.meters);
+  const totalXp = METER_KEYS.reduce((sum, key) => sum + profile.meters[key], 0);
   const shadow = shadowLevel(profile.meters);
   const blockedTint = meterColor(progress.blockedBy, scheme);
 
@@ -145,38 +148,44 @@ export default function YouScreen() {
 
       <Spacer size={space.lg} />
 
-      {/* ── Level and streak ── */}
+      {/* ── At a glance ──
+          Four figures in a row instead of one flame in an empty panel. A single
+          stat centred in a full-width block wastes the space it occupies and
+          tells you less than a compact row of four. */}
       <Animated.View entering={FadeInDown.duration(motion.slow).delay(60)}>
         <Card>
-          <Row justify="space-around" align="center">
-            <View style={{ alignItems: 'center', gap: 4 }}>
-              <Tooltip
-                title="Daily streak"
-                body={`Consecutive days with a finished session. Your longest run so far is ${streak.longest}. A missed day resets the count to one, not to zero.`}
-                align="center">
+          <Row justify="space-between" align="center">
+            <Tooltip
+              title="Daily streak"
+              body={`Consecutive days with a finished session. Your longest run is ${streak.longest}. A missed day resets the count to one, not to zero.`}
+              align="center">
+              <Stack gap={2} style={{ alignItems: 'center' }}>
                 <StreakFlame
                   days={streak.current}
                   lit={streak.activeToday}
-                  size={30}
+                  size={22}
                   showCount={false}
                 />
-              </Tooltip>
-              <Text variant="numeric">{streak.current}</Text>
-              <Text variant="caption" tone="textFaint">
-                day streak
-              </Text>
-              {streak.longest > streak.current ? (
+                <Text variant="numericSm">{streak.current}</Text>
                 <Text variant="caption" tone="textFaint">
-                  best {streak.longest}
+                  streak
                 </Text>
-              ) : null}
-              {streak.atRisk ? <Chip label="at risk" color={theme.warning} filled /> : null}
-            </View>
+              </Stack>
+            </Tooltip>
+            <Stat value={totalXp.toLocaleString()} label="total XP" />
+            <Stat value={summary.total} label="answered" />
+            <Stat value={`${Math.round(summary.averageScore * 100)}%`} label="accuracy" />
           </Row>
+          {streak.atRisk ? (
+            <>
+              <Spacer size={space.md} />
+              <Chip label="Streak at risk, practice today" color={theme.warning} filled />
+            </>
+          ) : null}
         </Card>
       </Animated.View>
 
-      <Spacer size={space.md} />
+      <Spacer size={space.lg} />
 
       {/* ── Leaderboard ── */}
       <Animated.View entering={FadeInDown.duration(motion.slow).delay(90)}>
@@ -198,6 +207,9 @@ export default function YouScreen() {
             <CalendarHeatmap
               days={heatDays}
               width={cardInner}
+              // At GitHub's cell size a wide column fits a full year, which is
+              // the range that makes a heatmap worth looking at.
+              weeks={Math.max(17, Math.min(53, Math.floor(cardInner / 16)))}
               onSelectDay={setSelectedDay}
             />
           </Stack>
@@ -217,6 +229,15 @@ export default function YouScreen() {
               </Text>
             </Row>
             <Sparkline values={xpSeries} labels={xpLabels} width={cardInner} />
+            <Spacer size={space.lg} />
+            <Row justify="space-between" align="baseline">
+              <Eyebrow>Weekday rhythm</Eyebrow>
+              <Text variant="caption" tone="textFaint">
+                sessions by day
+              </Text>
+            </Row>
+            <Spacer size={space.sm} />
+            <WeekdayRhythm days={heatDays} width={cardInner} />
           </Stack>
         </Card>
       </Animated.View>

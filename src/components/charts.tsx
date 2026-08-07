@@ -239,8 +239,17 @@ export function CalendarHeatmap({
   const scheme = useScheme();
 
   const gap = 3;
-  const cell = Math.max(9, Math.floor((width - gap * (weeks - 1)) / weeks));
+  /**
+   * Cell size is capped, not just floored.
+   *
+   * It used to divide the available width by the number of weeks with no upper
+   * bound, so on a desktop column each cell grew to about 60px and the grid
+   * stopped reading as a calendar. GitHub's is around 11px and that is the
+   * right scale: the whole point is seeing a season at a glance.
+   */
+  const cell = Math.max(9, Math.min(13, Math.floor((width - gap * (weeks - 1)) / weeks)));
   const height = cell * 7 + gap * 6;
+  const gridWidth = weeks * (cell + gap) - gap;
 
   const byDay = new Map(days.map((d) => [d.day, d.xp]));
 
@@ -256,6 +265,8 @@ export function CalendarHeatmap({
   const start = new Date(today);
   start.setDate(start.getDate() - today.getDay() - (weeks - 1) * 7);
 
+  // A cell with no practice must still be visible against the surface behind it.
+  const emptyCell = scheme === 'dark' ? theme.elevatedActive : theme.borderStrong;
   const cells: { x: number; y: number; fill: string; key: string }[] = [];
   for (let w = 0; w < weeks; w += 1) {
     for (let d = 0; d < 7; d += 1) {
@@ -268,15 +279,15 @@ export function CalendarHeatmap({
         key,
         x: w * (cell + gap),
         y: d * (cell + gap),
-        fill: xp > 0 ? sequentialStep(intensity(xp), scheme) : theme.elevated,
+        fill: xp > 0 ? sequentialStep(intensity(xp), scheme) : emptyCell,
       });
     }
   }
 
   return (
     <View style={{ gap: space.sm }}>
-      <View style={{ width: weeks * (cell + gap) - gap, height }}>
-        <Svg width={weeks * (cell + gap) - gap} height={height}>
+      <View style={{ width: gridWidth, height }}>
+        <Svg width={gridWidth} height={height}>
           {cells.map((c) => (
             <Rect key={c.key} x={c.x} y={c.y} width={cell} height={cell} rx={2.5} fill={c.fill} />
           ))}
@@ -319,7 +330,7 @@ export function CalendarHeatmap({
                 width={10}
                 height={10}
                 rx={2.5}
-                fill={f === 0 ? theme.elevated : sequentialStep(f, scheme)}
+                fill={f === 0 ? emptyCell : sequentialStep(f, scheme)}
               />
             ))}
           </Svg>
@@ -477,3 +488,68 @@ export function ResultStrip({ scores, width }: { scores: number[]; width: number
 }
 
 export { radius };
+
+// ── Weekday rhythm ─────────────────────────────────────────────────────────
+
+/**
+ * Which days of the week you actually practice.
+ *
+ * Derived from the day history that already drives the heatmap, so it costs no
+ * new query. It answers a question the calendar cannot: the heatmap shows that
+ * you missed days, this shows *which* days you reliably miss, which is the one
+ * you have to plan around.
+ */
+export function WeekdayRhythm({
+  days,
+  width,
+  height = 84,
+}: {
+  days: { day: string; xp: number }[];
+  width: number;
+  height?: number;
+}) {
+  const theme = useTheme();
+  const scheme = useScheme();
+
+  const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const totals = new Array(7).fill(0);
+  for (const row of days) {
+    const weekday = new Date(`${row.day}T12:00:00`).getDay();
+    if (row.xp > 0) totals[weekday] += 1;
+  }
+  const peak = Math.max(...totals, 1);
+
+  const gap = 10;
+  const barW = Math.max(10, (width - gap * 6) / 7);
+  const barMax = height - 22;
+
+  return (
+    <Svg width={width} height={height}>
+      {totals.map((count, i) => {
+        const h = Math.max(2, (count / peak) * barMax);
+        const x = i * (barW + gap);
+        const strongest = count === peak && count > 0;
+        return (
+          <G key={i}>
+            <Rect
+              x={x}
+              y={barMax - h}
+              width={barW}
+              height={h}
+              rx={3}
+              fill={strongest ? theme.accent : sequentialStep(0.45, scheme)}
+            />
+            <SvgText
+              x={x + barW / 2}
+              y={height - 8}
+              fill={theme.textFaint}
+              fontSize={10}
+              textAnchor="middle">
+              {labels[i]}
+            </SvgText>
+          </G>
+        );
+      })}
+    </Svg>
+  );
+}

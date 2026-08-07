@@ -155,18 +155,22 @@ export function LadderCard({ meters, celebrateTo }: { meters: Meters; celebrateT
   const progress = levelProgress(meters);
 
   return (
-    <Row gap={space.lg} align="center">
+    <Row gap={space.xl} align="flex-start">
       <ProgressLadder meters={meters} celebrateTo={celebrateTo} />
-      <Stack gap={space.sm} style={{ flex: 1 }}>
-        <Eyebrow>Rung {progress.level.index + 1} of {LEVELS.length}</Eyebrow>
-        <Text variant="title">{progress.level.title}</Text>
-        <Text variant="small" tone="textMuted">
-          {progress.level.note}
-        </Text>
+      <Stack gap={space.md} style={{ flex: 1 }}>
+        <Stack gap={space.xs}>
+          <Eyebrow>
+            Rung {progress.level.index + 1} of {LEVELS.length}
+          </Eyebrow>
+          <Text variant="title">{progress.level.title}</Text>
+          <Text variant="small" tone="textMuted">
+            {progress.level.note}
+          </Text>
+        </Stack>
+
         {progress.next ? (
           <View
             style={{
-              marginTop: space.xs,
               padding: space.md,
               borderRadius: radius.md,
               backgroundColor: theme.accentSoft,
@@ -177,13 +181,42 @@ export function LadderCard({ meters, celebrateTo }: { meters: Meters; celebrateT
             <Text variant="caption" tone="textMuted">
               {progress.deficit.toLocaleString()} {METER_META[progress.blockedBy].label} XP away
             </Text>
-            <Text variant="caption" tone="textFaint">
-              Rungs climb on your weakest meter, so only XP landing on{' '}
-              {METER_META[progress.blockedBy].label} moves this number.
-            </Text>
           </View>
         ) : null}
+
+        {/* Every rung, named.
+            A ladder you cannot read the rungs of only tells you where you are,
+            not where it goes, and the whole point of eight named levels is that
+            you can see the shape of the climb ahead. */}
+        <Stack gap={2}>
+          {LEVELS.map((level) => {
+            const reached = level.index <= progress.level.index;
+            const current = level.index === progress.level.index;
+            return (
+              <Row key={level.index} gap={space.sm} align="center">
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: current
+                      ? theme.accent
+                      : reached
+                        ? theme.textFaint
+                        : theme.borderStrong,
+                  }}
+                />
+                <Text
+                  variant={current ? 'smallStrong' : 'caption'}
+                  color={current ? theme.accent : reached ? theme.textMuted : theme.textFaint}>
+                  {level.title}
+                </Text>
+              </Row>
+            );
+          })}
+        </Stack>
       </Stack>
     </Row>
   );
 }
+
