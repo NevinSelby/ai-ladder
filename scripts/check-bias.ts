@@ -20,23 +20,39 @@ import type { ContentItem } from '../shared/content';
 const MAX_LONGEST_RATE = 0.4;
 /** A correct answer more than this much longer than the mean is a giveaway. */
 const MAX_LENGTH_RATIO = 1.35;
+/**
+ * Share of correct answers allowed to sit on any single option letter.
+ *
+ * Length was not the only exploitable shape. Two files had 100% of their
+ * answers on option A, and the bank as a whole sat at 53%, so "always pick A"
+ * outperformed studying. With four options, chance is 25%; this allows drift
+ * without allowing a strategy.
+ */
+const MAX_LETTER_SHARE = 0.4;
 
 export interface BiasReport {
   mcq: number;
   longestCorrect: number;
   rate: number;
   offenders: { id: string; correctLen: number; meanOther: number; ratio: number }[];
+  /** Count of correct answers per option id. */
+  letters: Map<string, number>;
+  /** Share held by the most common option id. */
+  topLetterShare: number;
 }
 
 export function analyze(items: ContentItem[] = SEED_ITEMS): BiasReport {
   let mcq = 0;
   let longestCorrect = 0;
   const offenders: BiasReport['offenders'] = [];
+  const letters = new Map<string, number>();
 
   for (const item of items) {
     const payload = item.payload as { kind?: string; choices?: { id: string; text: string }[]; correctId?: string };
     if (payload?.kind !== 'mcq' || !payload.choices || !payload.correctId) continue;
     mcq += 1;
+
+    letters.set(payload.correctId, (letters.get(payload.correctId) ?? 0) + 1);
 
     const correct = payload.choices.find((c) => c.id === payload.correctId);
     const others = payload.choices.filter((c) => c.id !== payload.correctId);
@@ -53,7 +69,15 @@ export function analyze(items: ContentItem[] = SEED_ITEMS): BiasReport {
     }
   }
 
-  return { mcq, longestCorrect, rate: mcq ? longestCorrect / mcq : 0, offenders };
+  const topLetter = Math.max(0, ...letters.values());
+  return {
+    mcq,
+    longestCorrect,
+    rate: mcq ? longestCorrect / mcq : 0,
+    offenders,
+    letters,
+    topLetterShare: mcq ? topLetter / mcq : 0,
+  };
 }
 
 if (require.main === module) {
@@ -75,9 +99,22 @@ if (require.main === module) {
     }
   }
 
+  const letterPct = Math.round(report.topLetterShare * 100);
+  const spread = [...report.letters].sort().map(([k, v]) => `${k}:${v}`).join('  ');
+  console.log(`  Correct letter     ${spread}   top ${letterPct}%  target under ${MAX_LETTER_SHARE * 100}%`);
+
+  let failed = false;
   if (report.rate > MAX_LONGEST_RATE) {
-    console.error(`\n  ✗ The bank is beatable by shape: ${pct}% of answers are the longest option.\n`);
+    console.error(`\n  ✗ Beatable by length: ${pct}% of correct answers are the longest option.`);
+    failed = true;
+  }
+  if (report.topLetterShare > MAX_LETTER_SHARE) {
+    console.error(`  ✗ Beatable by position: ${letterPct}% of correct answers sit on one option.`);
+    failed = true;
+  }
+  if (failed) {
+    console.error('');
     process.exit(1);
   }
-  console.log('\n  ✓ Answer length carries no signal.\n');
+  console.log('\n  ✓ Neither answer length nor position carries signal.\n');
 }
