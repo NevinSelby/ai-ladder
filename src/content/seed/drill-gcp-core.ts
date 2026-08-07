@@ -1175,7 +1175,7 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       stem: 'A team proposes BigQuery as the primary store for their web application’s user profiles, read and updated on every request. What do you say?',
       choices: [
         { id: 'a', text: 'Serve from Cloud SQL, AlloyDB, Spanner or Firestore, stream to BigQuery' },
-        { id: 'b', text: 'It works if they cluster the profile table on user_id for point lookups', whyWrong: 'Clustering reduces bytes scanned. It does not turn an analytical engine into a low-latency point-lookup store.' },
+        { id: 'b', text: 'It works if they cluster the profile table on user_id for fast point lookups', whyWrong: 'Clustering reduces bytes scanned. It does not turn an analytical engine into a low-latency point-lookup store.' },
         { id: 'c', text: 'It works if they buy a slot reservation to fix query concurrency', whyWrong: 'Reservations fix concurrency and cost predictability, not the per-query latency floor of an analytical engine.' },
         { id: 'd', text: 'It works if profile updates are batched into an hourly load job', whyWrong: 'Batching the writes does not fix the per-request reads, and the application would be serving hour-old profiles.' },
       ],
@@ -1356,7 +1356,7 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       kind: 'mcq',
       stem: 'A customer wants to standardize on Spanner for everything, including a 200 GB single-region OLTP database with modest write volume. What is your recommendation?',
       choices: [
-        { id: 'a', text: 'Standardize on Spanner, since one engine reduces operational surface', whyWrong: 'Standardization is real value, but paying a distributed database’s floor and rewriting for its key design on every small service is a poor trade.' },
+        { id: 'a', text: 'Standardize on Spanner, since one engine reduces the operational surface', whyWrong: 'Standardization is real value, but paying a distributed database’s floor and rewriting for its key design on every small service is a poor trade.' },
         { id: 'b', text: 'Use Spanner at the smallest capacity so the bill stays small', whyWrong: 'Capacity also governs storage headroom and throughput, so the minimum is not a free tier and it will need to grow.' },
         { id: 'c', text: 'Keep it on Cloud SQL or AlloyDB: it needs none of what Spanner sells' },
         { id: 'd', text: 'Use Spanner with a Cloud SQL replica for cost-sensitive read traffic', whyWrong: 'Two engines, two schemas and a replication path between them is strictly more cost and more failure modes.' },
@@ -1447,7 +1447,7 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       stem: 'An IoT platform ingests around 200,000 writes per second and mostly queries the last 24 hours for one device. Which store fits?',
       choices: [
         { id: 'a', text: 'Firestore, with one document written per device reading', whyWrong: 'Firestore is not built for that sustained write rate, and a document per reading makes per-device range scans expensive.' },
-        { id: 'b', text: 'Spanner, with the device id as the leading primary key column', whyWrong: 'It would work, but you are paying for global strong consistency that telemetry does not need, at a much higher cost per write.' },
+        { id: 'b', text: 'Spanner, keyed with the device id as the leading primary key column', whyWrong: 'It would work, but you are paying for global strong consistency that telemetry does not need, at a much higher cost per write.' },
         { id: 'c', text: 'Bigtable, keyed on device id plus a bucketed timestamp suffix' },
         { id: 'd', text: 'BigQuery streaming inserts, queried per device on demand', whyWrong: 'Fine as the analytics destination, wrong as the low-latency lookup path the application queries per device.' },
       ],
@@ -1468,7 +1468,7 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       kind: 'mcq',
       stem: 'After enabling a second Bigtable cluster with multi-cluster routing, an application that reads back the row it just wrote starts seeing stale values. What is the correct response?',
       choices: [
-        { id: 'a', text: 'Add a short retry loop until the read returns the expected value', whyWrong: 'It masks a consistency model with a timing assumption, and the loop fails whenever replication lag exceeds your patience.' },
+        { id: 'a', text: 'Add a short retry loop until the read returns the expected new value', whyWrong: 'It masks a consistency model with a timing assumption, and the loop fails whenever replication lag exceeds your patience.' },
         { id: 'b', text: 'Enable strong consistency on the cluster replication policy', whyWrong: 'There is no such setting. Cross-cluster replication is eventually consistent, and routing is the lever you have.' },
         { id: 'c', text: 'Move the read-modify-write into a multi-row transaction', whyWrong: 'Bigtable atomicity is per row. Widening the operation does not exist as an option and would not address routing.' },
         { id: 'd', text: 'Use an app profile with single-cluster routing for that workload' },
@@ -1629,7 +1629,7 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       choices: [
         { id: 'a', text: 'The workers are undersized and need more memory per worker', whyWrong: 'One saturated worker among many idle ones is a distribution problem. A bigger machine raises the ceiling on the same single thread.' },
         { id: 'b', text: 'A hot key: combine before the shuffle, or salt and aggregate twice' },
-        { id: 'c', text: 'Streaming Engine is disabled, so shuffle state sits on the workers', whyWrong: 'Streaming Engine moves shuffle state off the workers and helps in general, but it does not redistribute a single key across workers.' },
+        { id: 'c', text: 'Streaming Engine is disabled, so the shuffle state sits on the workers', whyWrong: 'Streaming Engine moves shuffle state off the workers and helps in general, but it does not redistribute a single key across workers.' },
         { id: 'd', text: 'The watermark advances slowly because of late-arriving data', whyWrong: 'Late data delays window firing. It does not produce a single hot worker while the rest sit idle.' },
       ],
       correctId: 'b',
@@ -1805,7 +1805,7 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       kind: 'mcq',
       stem: 'A team creates a KMS key in us-central1 and tries to use it as CMEK for a BigQuery dataset in the EU multi-region. It fails. Why?',
       choices: [
-        { id: 'a', text: 'BigQuery CMEK requires a key with the HSM protection level', whyWrong: 'Both software and HSM keys are usable. Protection level is a separate choice from location.' },
+        { id: 'a', text: 'BigQuery CMEK requires a key with the HSM protection level set', whyWrong: 'Both software and HSM keys are usable. Protection level is a separate choice from location.' },
         { id: 'b', text: 'The dataset must exist before a CMEK key can be attached', whyWrong: 'CMEK can be set at dataset creation or changed later. Ordering is not the constraint here.' },
         { id: 'c', text: 'Key location must be compatible with the resource location' },
         { id: 'd', text: 'Cross-region key use needs VPC Service Controls turned off', whyWrong: 'Perimeters are unrelated. The location rule applies with or without them.' },
@@ -1985,9 +1985,9 @@ export const DRILL_GCP_CORE: DrillItem[] = [
       kind: 'mcq',
       stem: 'A customer already runs a third-party CSPM and asks what Security Command Center adds. What is the honest answer?',
       choices: [
-        { id: 'a', text: 'More complete misconfiguration coverage than any third party', whyWrong: 'Overclaiming on the one dimension where the tools genuinely overlap is the fastest way to lose credibility in the room.' },
+        { id: 'a', text: 'More complete misconfiguration coverage than any third-party tool', whyWrong: 'Overclaiming on the one dimension where the tools genuinely overlap is the fastest way to lose credibility in the room.' },
         { id: 'b', text: 'It is required in order to use org policy constraints at all', whyWrong: 'Org policy is independent of SCC. Tying them together is simply inaccurate.' },
-        { id: 'c', text: 'It replaces the need for a separate SIEM entirely', whyWrong: 'SCC findings usually flow into the SIEM. It is a source, not a substitute.' },
+        { id: 'c', text: 'It replaces the need for a separate SIEM in the security stack', whyWrong: 'SCC findings usually flow into the SIEM. It is a source, not a substitute.' },
         { id: 'd', text: 'Platform-sourced threat detection and native asset inventory' },
       ],
       correctId: 'd',
