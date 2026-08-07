@@ -30,28 +30,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Workload Identity Federation with GitHub’s OIDC provider',
+          text: 'A service account JSON key stored as an encrypted repo secret',
+          whyWrong:
+            'Still a long-lived credential. Encryption at rest inside the CI vendor does not stop it being copied out and replayed for as long as the key exists.',
         },
         {
           id: 'b',
-          text: 'A service account JSON key stored as an encrypted repository secret',
-          whyWrong:
-            'Still a long-lived credential. Encryption at rest in the CI vendor does not change that it can be exfiltrated and used indefinitely.',
+          text: 'Workload Identity Federation trusting GitHub’s OIDC issuer',
         },
         {
           id: 'c',
-          text: 'A dedicated user account with a password in the team password manager',
+          text: 'A self-hosted runner in the VPC using its attached service account',
           whyWrong:
-            'Human identities for machine workloads break attribution and cannot be scoped or rotated automatically.',
+            'Defensible when egress rules genuinely forbid federation, but it makes the customer run and patch runner VMs to solve an authentication problem federation already solves.',
         },
         {
           id: 'd',
-          text: 'A self-hosted runner inside the VPC using the attached service account',
+          text: 'A key rotated nightly by a Cloud Build job into Secret Manager',
           whyWrong:
-            'Workable, but it makes the customer operate runner infrastructure to solve an authentication problem. Reach for it only when egress rules genuinely forbid federation.',
+            'Rotation shortens the exposure window without removing the artifact the policy bans, and you now own a rotation job whose silent failure looks exactly like success.',
         },
       ],
-      correctId: 'a',
+      correctId: 'b',
     },
   },
   {
@@ -69,27 +69,27 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'A bank’s CISO says: "I am not worried about the network. I am worried that someone with valid credentials copies our data into a personal project." Which control addresses that specific fear?',
       choices: [
-        { id: 'a', text: 'VPC Service Controls perimeter around the projects holding the data' },
+        {
+          id: 'a',
+          text: 'Private Service Connect endpoints for the Google APIs in use',
+          whyWrong:
+            'Solves how traffic reaches the API. A credentialed principal already inside the network copies the data over that same private path.',
+        },
         {
           id: 'b',
-          text: 'Private Service Connect endpoints for the Google APIs',
+          text: 'CMEK on the datasets, with a key only the bank can disable',
           whyWrong:
-            'Solves private reachability. A credentialed insider inside the network is entirely unaffected by it.',
+            'Controls the key, not the copy. Anyone holding read access decrypts transparently, and the export lands in the destination project as plaintext.',
         },
-        {
-          id: 'c',
-          text: 'CMEK on the datasets',
-          whyWrong:
-            'Controls the key, not the copy. A principal with read access decrypts transparently.',
-        },
+        { id: 'c', text: 'A VPC Service Controls perimeter around the data projects' },
         {
           id: 'd',
-          text: 'Firewall rules denying egress to the public internet',
+          text: 'Domain restricted sharing on the organization’s IAM policy',
           whyWrong:
-            'Google API traffic is not ordinary internet egress, and the copy happens API-to-API without traversing your firewall.',
+            'Limits which identities can hold roles inside the org. The insider is already an in-domain identity, and the destination project is not governed by that constraint.',
         },
       ],
-      correctId: 'a',
+      correctId: 'c',
     },
   },
   {
@@ -108,28 +108,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'CMEK gives them key custody and a kill switch; proving access requires Access Transparency and justification controls',
+          text: 'Yes: with CMEK there is no provider path to the plaintext',
+          whyWrong:
+            'Overclaim. Services must decrypt in order to operate on the data, so CMEK controls the key rather than every runtime path to plaintext.',
         },
         {
           id: 'b',
-          text: 'Yes: CMEK means the provider holds no path to the plaintext',
+          text: 'No: CMEK is a procurement checkbox with no real enforcement',
           whyWrong:
-            'Overclaim. Services decrypt in order to operate on the data; CMEK controls the key, not every runtime path.',
+            'Understates it. Disabling the key genuinely renders the data unreadable, which is a control the customer can test rather than take on trust.',
         },
         {
           id: 'c',
-          text: 'No: CMEK is purely a compliance checkbox with no technical effect',
+          text: 'Only with Assured Workloads restricting who may operate on it',
           whyWrong:
-            'Understates it. Disabling the key genuinely renders the data unusable, which is a real and testable control.',
+            'Assured Workloads constrains residency and support personnel, which is a separate guarantee. CMEK is meaningful without it, and it is not what backs the custody claim.',
         },
         {
           id: 'd',
-          text: 'Only if they also enable Assured Workloads',
-          whyWrong:
-            'Assured Workloads constrains residency and personnel access, but it is a separate control and not what makes CMEK meaningful.',
+          text: 'They get key custody and a kill switch, not proof of no access',
         },
       ],
-      correctId: 'a',
+      correctId: 'd',
     },
   },
   {
@@ -181,28 +181,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Messages may be redelivered, so writes must be idempotent on a business key',
+          text: 'Delivery is exactly once, so a plain ledger insert is safe',
+          whyWrong:
+            'At-least-once is the default. Even with exactly-once delivery enabled on a pull subscription, a retry after a partial downstream failure still needs a dedupe key to be safe.',
         },
         {
           id: 'b',
-          text: 'Each message arrives exactly once, so a plain insert is safe',
+          text: 'Ordering keys guarantee global ordering across the topic',
           whyWrong:
-            'At-least-once is the default. Even with exactly-once delivery enabled on a pull subscription, your downstream write still needs a dedupe key to survive a retry after a partial failure.',
+            'Ordering keys order the messages that share a key. Ordering the whole topic would mean one serialized stream, which is not what the subscription gives you.',
         },
         {
           id: 'c',
-          text: 'Global ordering is guaranteed across the whole topic',
-          whyWrong:
-            'Ordering keys give ordering per key, not across the topic. Global ordering would mean a single serialised stream.',
+          text: 'Redelivery happens, so writes must be idempotent per order id',
         },
         {
           id: 'd',
-          text: 'Failed messages are silently dropped after the ack deadline',
+          text: 'Messages past the ack deadline are dropped, so re-poll the source',
           whyWrong:
-            'They are redelivered, and eventually dead-lettered if you configured a dead-letter topic. Silence is not the failure mode; duplication is.',
+            'They are redelivered, and dead-lettered only if you configured a dead-letter topic. The failure mode to design against is duplication, not silence.',
         },
       ],
-      correctId: 'a',
+      correctId: 'c',
     },
   },
   {
@@ -232,7 +232,7 @@ export const DRILL_SEED: DrillItem[] = [
     nodeIds: ['gcp.compute_choice', 'del.handover'],
     difficulty: 'intro',
     explanation:
-      'The deciding question is rarely technical capability, all three can run the container. It is who operates it after you leave. A team with no platform engineers inherits a GKE cluster as a liability; Cloud Run hands back something they can actually keep alive.',
+      'The deciding question is rarely technical capability, all four options can run the container. It is who operates it after you leave. A team with no platform engineers inherits a GKE cluster as a liability; Cloud Run hands back something they can actually keep alive.',
     citations: cite('cloudRun'),
     origin: 'seed',
     criticScore: null,
@@ -240,24 +240,24 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'Your pilot is a single containerised HTTP service with spiky traffic. The customer has four backend engineers and no platform team. What do you deploy on?',
       choices: [
-        { id: 'a', text: 'Cloud Run' },
+        { id: 'a', text: 'Cloud Run, which scales to zero between traffic spikes' },
         {
           id: 'b',
-          text: 'GKE Standard with a dedicated node pool',
+          text: 'GKE Standard with a dedicated node pool and cluster autoscaler',
           whyWrong:
-            'Hands a team with no platform engineers an upgrade cadence, node management and a networking model they did not ask for.',
+            'Hands four backend engineers an upgrade cadence, node pool sizing and a networking model that none of them asked for and none of them can staff.',
         },
         {
           id: 'c',
-          text: 'Compute Engine behind a managed instance group',
+          text: 'Compute Engine in a managed instance group with autohealing',
           whyWrong:
-            'Adds OS patching and image management for no benefit over a managed container runtime.',
+            'Adds OS patching, image baking and boot-time configuration for no capability a managed container runtime is missing.',
         },
         {
           id: 'd',
-          text: 'GKE Autopilot',
+          text: 'GKE Autopilot, since Google manages the nodes for them',
           whyWrong:
-            'Closer, and defensible if they already run Kubernetes. For one HTTP service it is still a cluster to reason about.',
+            'Node management goes away; the cluster, its upgrade cadence and the Kubernetes API do not. Defensible only if they already run Kubernetes elsewhere.',
         },
       ],
       correctId: 'a',
@@ -279,28 +279,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'An organization policy constraint applied at the folder, disabling key creation',
+          text: 'An IAM deny policy on key creation for the known principals',
+          whyWrong:
+            'Enumerating principals means the next service account somebody adds is unconstrained. The guarantee has to attach to the folder, not to a list you maintain by hand.',
         },
         {
           id: 'b',
-          text: 'An IAM deny on the key-creation permission for known principals',
+          text: 'A Security Command Center detector alerting on new keys',
           whyWrong:
-            'Enumerating principals means the next principal someone adds is unconstrained. Policy at the folder covers everything beneath it.',
+            'Detective, not preventive. The key exists, and may already have been copied out, by the time anyone reads the finding.',
         },
         {
           id: 'c',
-          text: 'A Security Command Center finding that alerts on new keys',
+          text: 'A scheduled Cloud Run job that finds and deletes any key it sees',
           whyWrong:
-            'Detective, not preventive. The key exists by the time you read the alert.',
+            'Leaves a window of exposure on every key, and eventually deletes one that something load-bearing depends on at three in the morning.',
         },
         {
           id: 'd',
-          text: 'A scheduled job that deletes any key it finds',
-          whyWrong:
-            'A window of exposure plus a job that will one day delete something load-bearing at 3am.',
+          text: 'An org policy constraint disabling key creation on the folder',
         },
       ],
-      correctId: 'a',
+      correctId: 'd',
     },
   },
 
@@ -322,26 +322,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'The Gemini Enterprise Agent Platform, Vertex capabilities now ship through it',
+          text: 'Nothing changed; Vertex AI Agent Builder is still the name',
+          whyWrong:
+            'It was renamed at Cloud Next ’26. Using last year’s product names in front of a customer is the fastest way to signal you have not deployed recently.',
         },
         {
           id: 'b',
-          text: 'Nothing changed; Vertex AI Agent Builder is still the current name',
-          whyWrong: 'It was rebranded at Cloud Next ’26.',
+          text: 'Gemini Enterprise Agent Platform; Vertex ships through it',
         },
         {
           id: 'c',
-          text: 'It was discontinued and customers must migrate to a third-party framework',
+          text: 'It was discontinued, so they must adopt a third-party framework',
           whyWrong:
-            'A rename and consolidation, not a deprecation. Telling a customer their platform was killed would be a serious and memorable error.',
+            'A rename and a consolidation, not a deprecation. Telling a customer their platform was killed is the kind of error they repeat to their CIO.',
         },
         {
           id: 'd',
-          text: 'It was folded into Google Workspace',
-          whyWrong: 'Different product line entirely.',
+          text: 'It moved into Google Workspace as an end-user Gemini add-on',
+          whyWrong:
+            'Different product line. Gemini in Workspace is an end-user surface, not the platform you build and deploy agents on.',
         },
       ],
-      correctId: 'a',
+      correctId: 'b',
     },
   },
   {
@@ -381,26 +383,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Text inside the retrieved documents, which the model treats as context',
+          text: 'The end user’s typed question, which is unsanitized free text',
+          whyWrong:
+            'Real, and the user is authenticated and rarely the attacker. Indirect injection arriving inside content they never wrote is the harder surface to defend.',
         },
         {
           id: 'b',
-          text: 'The end user’s typed question',
+          text: 'The system prompt, which the model trusts above every other input',
           whyWrong:
-            'Real, but the user is authenticated and usually not the attacker. Indirect injection through content they did not write is the harder problem.',
+            'You author it and ship it with the app. It is where an injected instruction lands and takes effect, not where it originates.',
         },
         {
           id: 'c',
-          text: 'The system prompt',
-          whyWrong: 'You control it. It is a place injection lands, not a place it originates.',
+          text: 'Text inside the retrieved SharePoint documents, read as context',
         },
         {
           id: 'd',
-          text: 'The model weights',
-          whyWrong: 'Not an injection surface in a hosted-model deployment.',
+          text: 'The model weights, which may carry a poisoned instruction',
+          whyWrong:
+            'Not an injection surface in a hosted-model deployment: you are not training the weights and no request can write to them.',
         },
       ],
-      correctId: 'a',
+      correctId: 'c',
     },
   },
   {
@@ -417,23 +421,24 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'Retrieval must respect per-row ACLs that already live in the customer’s Postgres, and the corpus is about two million chunks. What is the pragmatic first choice?',
       choices: [
-        { id: 'a', text: 'pgvector in AlloyDB, alongside the ACL tables' },
+        { id: 'a', text: 'pgvector in AlloyDB, indexed beside the existing ACL tables' },
         {
           id: 'b',
-          text: 'A dedicated vector index, fetching ACLs separately and filtering afterwards',
+          text: 'A dedicated vector index, applying the ACL filter after retrieval',
           whyWrong:
-            'Post-filtering breaks top-k: filter after retrieval and a user with narrow access gets a near-empty result set from a full-corpus search.',
+            'Post-filtering breaks top-k. A user with narrow access gets a near-empty result set, because the search ranked across the whole corpus before anything was filtered.',
         },
         {
           id: 'c',
-          text: 'Embed the ACL into the chunk text so the model can reason about it',
+          text: 'Write each chunk’s ACL into its text so the model respects it',
           whyWrong:
-            'Asking a language model to enforce authorisation. This is the security finding that ends the pilot.',
+            'Delegates authorization to a language model that can be argued out of it. This is the security finding that ends the pilot.',
         },
         {
           id: 'd',
-          text: 'One index per user',
-          whyWrong: 'Does not survive contact with a customer who has 40,000 employees.',
+          text: 'One vector index per user, rebuilt whenever their access changes',
+          whyWrong:
+            'Index count and rebuild cost scale with headcount. It does not survive contact with a customer who has 40,000 employees.',
         },
       ],
       correctId: 'a',
@@ -456,26 +461,27 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'Users complain that searching for the exact error code "ERR-4471" returns unrelated documents, while conceptual questions work fine. What is the fix?',
       choices: [
-        { id: 'a', text: 'Add a lexical (BM25) channel and fuse it with the vector results' },
+        {
+          id: 'a',
+          text: 'Raise top-k from 5 to 50 so the right chunk is in the window',
+          whyWrong:
+            'Buries the model in near-duplicates and raises cost per call without moving the matching chunk any higher up the ranking.',
+        },
         {
           id: 'b',
-          text: 'Increase top-k from 5 to 50',
+          text: 'Move to a larger embedding model with more dimensions',
           whyWrong:
-            'Buries the model in noise and raises cost without making the right chunk rank higher.',
+            'Rare literal tokens carry almost no semantic signal, so a bigger dense encoder represents them no better. This is structural, not a capacity limit.',
         },
         {
           id: 'c',
-          text: 'Switch to a larger embedding model',
+          text: 'Chunk smaller so the code dominates its chunk’s embedding',
           whyWrong:
-            'Marginal. Rare literal tokens are a structural weakness of dense retrieval, not a capacity problem.',
+            'Shifts the ratio slightly and strips out the surrounding context the answer needs. The token still means nothing to the encoder.',
         },
-        {
-          id: 'd',
-          text: 'Lower the temperature',
-          whyWrong: 'Generation setting. The failure happened before the model was called.',
-        },
+        { id: 'd', text: 'Add a BM25 lexical channel and fuse its ranks with the vectors' },
       ],
-      correctId: 'a',
+      correctId: 'd',
     },
   },
   {
@@ -515,27 +521,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Whether the win rate holds when you swap which response is presented first',
+          text: 'Whether the judge model is also the model being evaluated here',
+          whyWrong:
+            'Self-preference is real and worth ruling out, but position bias is the larger effect on a pairwise run and the one you can correct in an afternoon.',
         },
         {
           id: 'b',
-          text: 'Whether the judge model is the same one being evaluated',
-          whyWrong:
-            'Worth knowing, and self-preference is real, but position bias is the larger and more easily corrected effect here.',
+          text: 'Whether the win rate survives swapping the presentation order',
         },
         {
           id: 'c',
-          text: 'Whether the sample size exceeds 1,000',
+          text: 'Whether the comparison set is larger than a thousand pairs',
           whyWrong:
-            'A biased estimator does not become correct with more samples; it becomes confidently wrong.',
+            'More pairs tighten the interval around a biased estimate. The estimator stays wrong, it just reports itself with more confidence.',
         },
         {
           id: 'd',
-          text: 'Whether temperature was zero',
-          whyWrong: 'Reduces variance, does nothing about a systematic ordering preference.',
+          text: 'Whether the judge ran at temperature zero for every pair',
+          whyWrong:
+            'Cuts run-to-run variance and leaves a systematic preference for whichever response was shown first completely intact.',
         },
       ],
-      correctId: 'a',
+      correctId: 'b',
     },
   },
   {
@@ -573,25 +580,27 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'An agent resends a 30k-token policy pack with every turn. Input dominates the bill by roughly 20:1. What gives the biggest saving first?',
       choices: [
-        { id: 'a', text: 'Prompt caching on the stable prefix' },
+        {
+          id: 'a',
+          text: 'Cut max output tokens and prompt the model to answer briefly',
+          whyWrong:
+            'Attacks the five percent term. At twenty to one input against output, even halving the output moves the bill by low single digits.',
+        },
         {
           id: 'b',
-          text: 'Reducing max output tokens',
-          whyWrong: 'Attacks the 5% term while the 95% term is untouched.',
-        },
-        {
-          id: 'c',
-          text: 'Dropping to a smaller model for every call',
+          text: 'Route every call to the smaller model in the same family',
           whyWrong:
-            'A quality trade for a saving you can get without one. Tier by task difficulty later, not first.',
+            'Trades answer quality for a saving that is available without one. Tier by task difficulty once the input term is dealt with, not before.',
         },
+        { id: 'c', text: 'Cache the stable 30k-token policy prefix between turns' },
         {
           id: 'd',
-          text: 'Batching requests overnight',
-          whyWrong: 'This is an interactive agent; latency is a product requirement.',
+          text: 'Batch the turns overnight to get the batch pricing tier',
+          whyWrong:
+            'This is an interactive agent, so latency is a product requirement and the batch tier is not available to it in the first place.',
         },
       ],
-      correctId: 'a',
+      correctId: 'c',
     },
   },
   {
@@ -608,25 +617,27 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'A customer’s platform team wants to own their own integrations rather than filing tickets against your agent. What do you propose?',
       choices: [
-        { id: 'a', text: 'They expose an MCP server; your agent discovers its tools at runtime' },
         {
-          id: 'b',
-          text: 'They send you an OpenAPI spec and you hand-write tool wrappers each time',
+          id: 'a',
+          text: 'They hand you an OpenAPI spec and you write the tool wrappers',
           whyWrong:
-            'Works, and puts you in the critical path of every one of their changes. That is the ticket queue they are trying to escape.',
+            'Works, and puts you in the critical path of every change they make. That is precisely the ticket queue they are trying to leave.',
         },
+        { id: 'b', text: 'They run an MCP server and your agent discovers its tools' },
         {
           id: 'c',
-          text: 'They fork your agent repository',
-          whyWrong: 'Creates a divergent copy you will be asked to support forever.',
+          text: 'They fork your agent repo and add integrations to their copy',
+          whyWrong:
+            'Creates a divergent copy you will be asked to support forever, and turns every upgrade you ship into a merge conflict for them.',
         },
         {
           id: 'd',
-          text: 'They write prompts describing their APIs',
-          whyWrong: 'Prose is not an interface. No schema, no validation, no error contract.',
+          text: 'They describe their APIs in prose inside the system prompt',
+          whyWrong:
+            'Prose is not an interface: no schema, no validation, no error contract, and the prompt grows with every integration they add.',
         },
       ],
-      correctId: 'a',
+      correctId: 'b',
     },
   },
   {
@@ -645,26 +656,25 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'The index was built with a privileged identity and retrieval does not filter by the caller’s permissions',
+          text: 'The embedding model reproduced text it memorized in training',
+          whyWrong:
+            'The document came out of their own corpus through retrieval. Nothing about the model’s training data is implicated by this failure.',
         },
         {
           id: 'b',
-          text: 'The embedding model leaked training data',
+          text: 'Chunk size was too large, so the HR text rode along with it',
           whyWrong:
-            'The document came from their own corpus via retrieval. Nothing about the model is implicated.',
+            'Chunk size changes answer quality and citation precision. It has no bearing on which chunks a given user is permitted to see.',
         },
         {
           id: 'c',
-          text: 'Temperature was too high',
-          whyWrong: 'A generation setting cannot conjure a specific internal HR document.',
+          text: 'Temperature was high enough for the model to invent details',
+          whyWrong:
+            'A sampling setting cannot produce a specific, real, internal document. The text was retrieved and handed to the model, not generated.',
         },
-        {
-          id: 'd',
-          text: 'The chunk size was too large',
-          whyWrong: 'Affects answer quality, not who is allowed to see the chunk.',
-        },
+        { id: 'd', text: 'Retrieval never filters chunks by the asking user’s access' },
       ],
-      correctId: 'a',
+      correctId: 'd',
     },
   },
   {
@@ -681,23 +691,24 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'A customer says the assistant "feels slow" at 6 seconds per answer. You have one week. What do you do first?',
       choices: [
-        { id: 'a', text: 'Stream tokens and show retrieval progress, cutting time-to-first-token' },
+        { id: 'a', text: 'Stream tokens and show retrieval progress as it happens' },
         {
           id: 'b',
-          text: 'Move to a smaller model to cut total generation time',
+          text: 'Move to a smaller model to cut end-to-end generation time',
           whyWrong:
-            'Trades answer quality for a metric the user does not directly perceive. Try the free win first.',
+            'Trades answer quality for a number the user never perceives directly. Take the free perceptual win before you spend quality on it.',
         },
         {
           id: 'c',
-          text: 'Add a caching layer for identical questions',
-          whyWrong: 'Helps a narrow repeat-query slice; most real questions are unique.',
+          text: 'Cache answers to identical questions in a lookup layer',
+          whyWrong:
+            'Helps the narrow slice of repeated queries. In a support corpus most questions are phrased uniquely, so the hit rate stays low.',
         },
         {
           id: 'd',
-          text: 'Tell them 6 seconds is normal for RAG',
+          text: 'Explain that six seconds is normal for a RAG pipeline',
           whyWrong:
-            'Deflection. It may even be true, and it still reads as an excuse rather than ownership.',
+            'It may even be true, and it still reads as an excuse. The complaint is about felt latency, which you can move inside the week.',
         },
       ],
       correctId: 'a',
@@ -721,27 +732,25 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Quarantine them to a rejects table with the raw value, and get the source system owner to confirm the convention',
+          text: 'Assume the convention most common in the file and move on',
+          whyWrong:
+            'Silently corrupts a fraction of rows, and the fraction stays invisible until somebody reconciles a compliance report months later.',
         },
         {
           id: 'b',
-          text: 'Assume the most common convention in the file and move on',
+          text: 'Drop the unparseable rows and log a count on every run',
           whyWrong:
-            'Silently corrupts a fraction of rows. You will find out during a compliance report months later.',
+            'Data loss with only a counter to show for it. Keep the raw values so the decision stays reversible once the source owner answers.',
         },
-        {
-          id: 'c',
-          text: 'Drop the ambiguous rows',
-          whyWrong:
-            'Data loss without a record. At minimum keep the raw values so the decision is reversible.',
-        },
+        { id: 'c', text: 'Quarantine them with the raw value and ask the source owner' },
         {
           id: 'd',
-          text: 'Store all three formats as strings and parse at query time',
-          whyWrong: 'Moves the ambiguity downstream to every consumer instead of resolving it once.',
+          text: 'Keep all three formats as strings and parse at query time',
+          whyWrong:
+            'Moves the ambiguity to every downstream consumer, each of whom resolves it differently. Resolve it once, at ingest, and record the decision.',
         },
       ],
-      correctId: 'a',
+      correctId: 'c',
     },
   },
   {
@@ -842,26 +851,24 @@ export const DRILL_SEED: DrillItem[] = [
       kind: 'mcq',
       stem: 'Procurement asks for your SOC 2 report. You have Type I only. What do you say?',
       choices: [
-        {
-          id: 'a',
-          text: 'Name the gap: you hold Type I, Type II observation is under way, and give the expected date',
-        },
+        { id: 'a', text: 'You hold Type I; give the date the Type II window closes' },
         {
           id: 'b',
-          text: 'Send the Type I report and let them notice',
+          text: 'Send the Type I report and wait to see whether they notice',
           whyWrong:
-            'They will notice, and now the issue is candour rather than a missing report.',
+            'They will notice, and then the conversation is about candor rather than about a report you are a few months from having.',
         },
         {
           id: 'c',
-          text: 'Say you are "SOC 2 compliant"',
-          whyWrong: 'Not a real status, and it will not survive one follow-up question.',
+          text: 'Tell them you are SOC 2 compliant and move the call along',
+          whyWrong:
+            'There is no such status. It will not survive one follow-up from a procurement team that reads these reports for a living.',
         },
         {
           id: 'd',
-          text: 'Offer ISO 27001 instead without explaining why',
+          text: 'Offer the ISO 27001 certificate in place of the report',
           whyWrong:
-            'A substitution without acknowledgment. Offer it *and* name the gap and it becomes helpful.',
+            'A substitution with no acknowledgment of the gap. Offer it and name the gap, and the same sentence becomes helpful instead of evasive.',
         },
       ],
       correctId: 'a',

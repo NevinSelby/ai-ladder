@@ -173,23 +173,14 @@ export default function ProgressScreen() {
               <Text variant="caption" tone="textFaint">
                 day streak
               </Text>
+              {streak.longest > streak.current ? (
+                <Text variant="caption" tone="textFaint">
+                  best {streak.longest}
+                </Text>
+              ) : null}
               {streak.atRisk ? <Chip label="at risk" color={theme.warning} filled /> : null}
             </View>
           </Row>
-          <Divider style={{ marginVertical: space.lg }} />
-          <Stack gap={space.xs}>
-            <Text variant="heading">{progress.level.title}</Text>
-            <Text variant="small" tone="textMuted">
-              {progress.level.note}
-            </Text>
-            {progress.next ? (
-              <Text variant="caption" color={blockedTint}>
-                {progress.deficit.toLocaleString()} {METER_META[progress.blockedBy].label} XP is all
-                that stands between you and {progress.next.title}. Levels follow your weakest
-                meter, not your total, so XP earned on other crafts does not move this number.
-              </Text>
-            ) : null}
-          </Stack>
         </Card>
       </Animated.View>
 
@@ -209,7 +200,7 @@ export default function ProgressScreen() {
             <Row justify="space-between" align="baseline">
               <Eyebrow>Practice history</Eyebrow>
               <Text variant="caption" tone="textFaint">
-                {streak.totalDays} day{streak.totalDays === 1 ? '' : 's'} · longest {streak.longest}
+                {streak.totalDays} day{streak.totalDays === 1 ? '' : 's'} practiced
               </Text>
             </Row>
             <CalendarHeatmap
@@ -288,8 +279,8 @@ export default function ProgressScreen() {
               <MeterRadar meters={profile.meters} size={Math.min(240, cardInner)} />
             </View>
             <Text variant="caption" tone="textFaint" center>
-              A balanced practitioner draws a regular pentagon. A spike means one meter is carrying
-              you, and the lowest point is the one setting your level.
+              A balanced practitioner draws a regular pentagon. A spike means one meter is
+              carrying you.
             </Text>
             {shadow.index > progress.level.index ? (
               <Text variant="caption" color={blockedTint} center>
