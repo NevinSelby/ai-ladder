@@ -52,6 +52,7 @@ export default function AuthScreen() {
 
   const [mode, setMode] = useState<Mode>('signin');
   const [phase, setPhase] = useState<Phase>('form');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -98,7 +99,7 @@ export default function AuthScreen() {
 
     const result =
       mode === 'signup'
-        ? await signUpWithPassword(email, password)
+        ? await signUpWithPassword(email, password, fullName)
         : await signInWithPassword(email, password);
 
     if (result.error) {
@@ -253,6 +254,31 @@ export default function AuthScreen() {
                       );
                     })}
                   </Row>
+
+                  {mode === 'signup' ? (
+                    <Stack gap={space.xs}>
+                      <Text variant="smallStrong">Your name</Text>
+                      <TextInput
+                        value={fullName}
+                        onChangeText={setFullName}
+                        placeholder="How the app should greet you"
+                        placeholderTextColor={theme.textFaint}
+                        autoCapitalize="words"
+                        autoComplete="name"
+                        textContentType="name"
+                        style={{
+                          fontSize: 16.5,
+                          color: theme.text,
+                          backgroundColor: theme.elevated,
+                          borderRadius: radius.md,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                          paddingHorizontal: space.lg,
+                          paddingVertical: space.md + 2,
+                        }}
+                      />
+                    </Stack>
+                  ) : null}
 
                   {/* Email */}
                   <Stack gap={space.xs}>

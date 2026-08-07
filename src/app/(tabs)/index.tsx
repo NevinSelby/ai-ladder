@@ -371,11 +371,6 @@ export default function TodayScreen() {
         ))}
       </Stack>
 
-      <Spacer size={space.xl} />
-      <Text variant="caption" tone="textFaint" center>
-        {status.summary.total} attempt{status.summary.total === 1 ? '' : 's'} logged ·{' '}
-        {status.summary.last7Days} this week
-      </Text>
       <Spacer />
     </Screen>
   );

@@ -58,9 +58,13 @@ export function Aurora({
       style={{ position: 'absolute', inset: 0, borderRadius: r, overflow: 'hidden', opacity }}>
       <Svg width={width} height={height}>
         <Defs>
-          <LinearGradient id="aurora" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={from ?? theme.accent} />
-            <Stop offset="1" stopColor={to ?? theme.accentAlt} />
+          {/* Fades out before the bottom edge. A wash that stops abruptly reads
+              as a rectangle someone forgot to blend, which is worse than no
+              wash at all. */}
+          <LinearGradient id="aurora" x1="0" y1="0" x2="0.7" y2="1">
+            <Stop offset="0" stopColor={from ?? theme.accent} stopOpacity={1} />
+            <Stop offset="0.55" stopColor={to ?? theme.accentAlt} stopOpacity={0.75} />
+            <Stop offset="1" stopColor={to ?? theme.accentAlt} stopOpacity={0} />
           </LinearGradient>
         </Defs>
         <Rect x={0} y={0} width={width} height={height} fill="url(#aurora)" />

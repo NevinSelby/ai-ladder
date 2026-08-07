@@ -115,9 +115,35 @@ function friendly(message: string): string {
   return message;
 }
 
-export async function signUpWithPassword(email: string, password: string): Promise<AuthResult> {
+/**
+ * Where a confirmation link lands.
+ *
+ * Must also be listed under Authentication, URL Configuration, Redirect URLs in
+ * the Supabase dashboard, or the link silently falls back to the Site URL.
+ */
+export const CONFIRM_REDIRECT = 'https://ai-ladder.onrender.com';
+
+export async function signUpWithPassword(
+  email: string,
+  password: string,
+  fullName?: string
+): Promise<AuthResult> {
   if (!supabase) return { session: null, needsConfirmation: false, error: 'Not configured.' };
-  const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+  // The name rides in user metadata so it survives to every device the account
+  // is used on, rather than living only in the local profile row.
+  //
+  // `emailRedirectTo` decides where the confirmation link lands. Without it the
+  // link follows the project's Site URL, which is why confirmations were
+  // arriving at the wrong destination. The web build is the right landing spot:
+  // it works on any device that can open a link, including the phone.
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: {
+      emailRedirectTo: CONFIRM_REDIRECT,
+      ...(fullName?.trim() ? { data: { full_name: fullName.trim() } } : {}),
+    },
+  });
   if (error) return { session: null, needsConfirmation: false, error: friendly(error.message) };
   // With email confirmation on, sign-up returns a user but no session until
   // the link is clicked. Surfacing that precisely beats a generic failure.
@@ -192,4 +218,46 @@ export async function ensureSession(): Promise<AuthState> {
 export function requireSupabase(): SupabaseClient {
   if (!supabase) throw new Error('Supabase is not configured.');
   return supabase;
+}
+
+export interface AccountIdentity {
+  email: string | null;
+  /** From sign-up metadata, or an OAuth provider when one is connected. */
+  name: string | null;
+  /** Provider-supplied picture. Password accounts have none, so the UI falls
+   *  back to initials rather than shipping a stock silhouette. */
+  avatarUrl: string | null;
+}
+
+/**
+ * Who is signed in, as the identity provider sees them.
+ *
+ * Supabase stores OAuth profile fields under different keys depending on the
+ * provider, so the lookups are ordered by how common they are rather than
+ * assuming one shape.
+ */
+export function identityFrom(session: Session | null): AccountIdentity {
+  const meta = (session?.user?.user_metadata ?? {}) as Record<string, unknown>;
+  const pick = (...keys: string[]): string | null => {
+    for (const key of keys) {
+      const value = meta[key];
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return null;
+  };
+
+  return {
+    email: session?.user?.email ?? null,
+    name: pick('full_name', 'name', 'preferred_username', 'user_name'),
+    avatarUrl: pick('avatar_url', 'picture'),
+  };
+}
+
+/** Two letters for the fallback avatar: initials beat a stock silhouette. */
+export function initialsFor(name: string | null, email: string | null): string {
+  const source = name?.trim() || email?.split('@')[0] || '';
+  const words = source.split(/[\s._-]+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }

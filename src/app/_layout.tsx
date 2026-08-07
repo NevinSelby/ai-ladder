@@ -16,6 +16,7 @@ import { readProfile } from '@/data/profile';
 import { bootstrapLocalData, DatabaseProvider, db, useDatabase } from '@/db';
 import { setHapticsFlag } from '@/lib/haptics';
 import { currentSession, initAuthPrefs } from '@/lib/supabase';
+import { AuthGate } from '@/components/auth-gate';
 import { syncNow } from '@/data/sync';
 import {
   SpaceGrotesk_500Medium,
@@ -162,6 +163,7 @@ export default function RootLayout() {
             <MotionProvider>
             <TutorialProvider>
             <Boot>
+              <AuthGate>
               <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
               <Stack
                 screenOptions={{
@@ -169,6 +171,7 @@ export default function RootLayout() {
                   contentStyle: { backgroundColor: theme.bg },
                 }}>
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
                 <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
                 <Stack.Screen
                   name="auth"
@@ -203,6 +206,7 @@ export default function RootLayout() {
                   options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
                 />
               </Stack>
+              </AuthGate>
             </Boot>
             </TutorialProvider>
             </MotionProvider>
