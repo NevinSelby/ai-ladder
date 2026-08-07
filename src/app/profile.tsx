@@ -50,7 +50,7 @@ import { LIVE_NODES } from '@shared/taxonomy';
  * Profile: who you are and how the app behaves.
  *
  * Deliberately not a second progress screen. Charts, meters and the heatmap
- * live on the Progress tab; duplicating them here made both pages weaker and
+ * live on the You tab; duplicating them here made both pages weaker and
  * left this one with no identity of its own. What belongs here is the stuff
  * with your name on it: the name itself, lifetime totals, preferences, backup,
  * and the way out.
@@ -277,7 +277,7 @@ export default function ProfileScreen() {
             <Divider style={{ marginVertical: space.lg }} />
 
             {/* Lifetime numbers, not charts: the running total a person quotes
-                about themselves, with the charts one tap away on Progress. */}
+                about themselves, with the charts one tap away on You. */}
             <Row justify="space-between">
               <Stat value={totalXp.toLocaleString()} label="lifetime XP" />
               <Stat value={profile.points.toLocaleString()} label="points" />
@@ -292,12 +292,12 @@ export default function ProfileScreen() {
             <Divider style={{ marginVertical: space.lg }} />
 
             <Tappable
-              onPress={() => router.push('/progress')}
+              onPress={() => router.push('/you')}
               accessibilityLabel="Open progress"
               scaleOnPress={false}>
               <Row justify="space-between" align="center">
                 <Text variant="smallStrong" tone="accent">
-                  Charts, streak and meters live on Progress
+                  Charts, streak and meters live on You
                 </Text>
                 <IconArrowRight color={theme.accent} size={16} />
               </Row>
