@@ -33,7 +33,9 @@ const MAX_LETTER_SHARE = 0.4;
 export interface BiasReport {
   mcq: number;
   longestCorrect: number;
+  shortestCorrect: number;
   rate: number;
+  shortestRate: number;
   offenders: { id: string; correctLen: number; meanOther: number; ratio: number }[];
   /** Count of correct answers per option id. */
   letters: Map<string, number>;
@@ -44,6 +46,7 @@ export interface BiasReport {
 export function analyze(items: ContentItem[] = SEED_ITEMS): BiasReport {
   let mcq = 0;
   let longestCorrect = 0;
+  let shortestCorrect = 0;
   const offenders: BiasReport['offenders'] = [];
   const letters = new Map<string, number>();
 
@@ -60,7 +63,12 @@ export function analyze(items: ContentItem[] = SEED_ITEMS): BiasReport {
 
     const correctLen = correct.text.length;
     const maxOther = Math.max(...others.map((c) => c.text.length));
+    const minOther = Math.min(...others.map((c) => c.text.length));
     if (correctLen >= maxOther) longestCorrect += 1;
+    // The inverse exploit. Trimming correct answers to fix "always the longest"
+    // lands on "always the shortest" if nobody is watching, which is exactly as
+    // beatable.
+    if (correctLen <= minOther) shortestCorrect += 1;
 
     const meanOther = others.reduce((sum, c) => sum + c.text.length, 0) / others.length;
     const ratio = correctLen / Math.max(meanOther, 1);
@@ -73,7 +81,9 @@ export function analyze(items: ContentItem[] = SEED_ITEMS): BiasReport {
   return {
     mcq,
     longestCorrect,
+    shortestCorrect,
     rate: mcq ? longestCorrect / mcq : 0,
+    shortestRate: mcq ? shortestCorrect / mcq : 0,
     offenders,
     letters,
     topLetterShare: mcq ? topLetter / mcq : 0,
@@ -89,7 +99,9 @@ if (require.main === module) {
   const report = analyze(items);
   const pct = Math.round(report.rate * 100);
   console.log(`\n  MCQ items          ${report.mcq}`);
+  const shortPct = Math.round(report.shortestRate * 100);
   console.log(`  Longest is correct ${report.longestCorrect} (${pct}%)  target under ${MAX_LONGEST_RATE * 100}%`);
+  console.log(`  Shortest is correct ${report.shortestCorrect} (${shortPct}%)  target under ${MAX_LONGEST_RATE * 100}%`);
   console.log(`  Over-long answers  ${report.offenders.length} (correct answer >${MAX_LENGTH_RATIO}x the mean distractor)`);
 
   if (report.offenders.length > 0) {
@@ -106,6 +118,10 @@ if (require.main === module) {
   let failed = false;
   if (report.rate > MAX_LONGEST_RATE) {
     console.error(`\n  ✗ Beatable by length: ${pct}% of correct answers are the longest option.`);
+    failed = true;
+  }
+  if (report.shortestRate > MAX_LONGEST_RATE) {
+    console.error(`  ✗ Beatable by length inverted: ${shortPct}% of correct answers are the shortest option.`);
     failed = true;
   }
   if (report.topLetterShare > MAX_LETTER_SHARE) {

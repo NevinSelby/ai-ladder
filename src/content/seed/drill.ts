@@ -890,26 +890,26 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Where inference runs: processing location must be constrained too, not just storage',
+          text: 'Nothing more, pinning storage to europe-west3 is enough',
+          whyWrong:
+            'Residency commitments cover processing as well as storage. Prompt content leaving the region is a transfer.',
         },
         {
           id: 'b',
-          text: 'Nothing; pinning storage is sufficient',
-          whyWrong:
-            'Residency commitments generally cover processing as well as storage. Prompt content leaving the region is a transfer.',
+          text: 'Where inference runs, since processing must be pinned too',
         },
         {
           id: 'c',
-          text: 'They need CMEK before residency means anything',
-          whyWrong: 'Related control, different guarantee. Residency holds without CMEK.',
+          text: 'CMEK on the buckets, without which residency means little',
+          whyWrong: 'A related control with a different guarantee. Residency holds perfectly well without CMEK.',
         },
         {
           id: 'd',
-          text: 'They need a second region for DR first',
-          whyWrong: 'A resilience concern, and a careless second region can itself break residency.',
+          text: 'A second EU region for disaster recovery, configured first',
+          whyWrong: 'A resilience concern, and a carelessly chosen second region can itself break residency.',
         },
       ],
-      correctId: 'a',
+      correctId: 'b',
     },
   },
 
@@ -931,28 +931,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'One real claim flows from their SFTP drop through parsing, retrieval and the model to a reviewed answer',
+          text: 'A polished UI over mocked model responses for the demo',
+          whyWrong:
+            'Nothing risky is proven, and it raises expectations faster than it reduces uncertainty.',
         },
         {
           id: 'b',
-          text: 'A polished UI with mocked responses',
+          text: 'The full ingestion pipeline for all fourteen source systems',
           whyWrong:
-            'Nothing risky is proven. It also raises expectations faster than it reduces uncertainty.',
+            'Broad and shallow. Six weeks of connectors before you learn whether the model can do the task at all.',
         },
         {
           id: 'c',
-          text: 'The full ingestion pipeline for all fourteen source systems',
+          text: 'An evaluation harness with no working system behind it yet',
           whyWrong:
-            'Broad and shallow. You will spend six weeks on connectors before learning whether the model can do the task at all.',
+            'Valuable, and not end-to-end. Pair it with the slice rather than shipping it on its own.',
         },
         {
           id: 'd',
-          text: 'An evaluation harness with no system behind it',
-          whyWrong:
-            'Valuable, and not end-to-end. Pair it with the slice rather than shipping it alone.',
+          text: 'One real claim from their SFTP drop through to an answer',
         },
       ],
-      correctId: 'a',
+      correctId: 'd',
     },
   },
   {
@@ -1047,28 +1047,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: '"Walk me through what happens today when a claim comes in that nobody can categorise."',
+          text: '"Would you say accuracy is your main concern here?"',
+          whyWrong:
+            'Leading and closed. You get agreement, and learn nothing you did not already believe.',
         },
         {
           id: 'b',
-          text: '"Would you say accuracy is your main concern?"',
+          text: '"Are you already using a vector database for this?"',
           whyWrong:
-            'Leading and closed. You will get agreement and learn nothing you did not already believe.',
+            'A solution-space question in a problem-space call. It signals you have already decided.',
         },
         {
           id: 'c',
-          text: '"Are you using a vector database?"',
-          whyWrong:
-            'Solution-space question in a problem-space conversation. It also signals you have already decided.',
+          text: '"Walk me through a claim nobody can categorize today."',
         },
         {
           id: 'd',
-          text: '"What is your budget?"',
+          text: '"What budget has been approved for this program?"',
           whyWrong:
-            'A question for later and probably for someone else. Asking it first frames you as a vendor rather than an engineer.',
+            'A question for later, and probably for someone else. Asking it first frames you as a vendor rather than an engineer.',
         },
       ],
-      correctId: 'a',
+      correctId: 'c',
     },
   },
   {
@@ -1087,28 +1087,28 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: 'Agree the refusals are a real problem, explain why blanket access breaks their own access model, and propose scoped access to the two systems behind most refusals',
+          text: 'Grant it for the pilot and tighten the scope before production',
+          whyWrong:
+            'Pilot permissions become production permissions, and you would be overriding their access model without their security team in the room.',
         },
         {
           id: 'b',
-          text: 'Grant it for the pilot and tighten it before production',
-          whyWrong:
-            'Pilot permissions become production permissions. You would also be overriding their access model without their security team in the room.',
+          text: 'Name the constraint, then scope access to the two systems',
         },
         {
           id: 'c',
-          text: 'Refuse, citing policy',
+          text: 'Refuse, and cite their own access control policy back at them',
           whyWrong:
-            'Correct outcome, delivered as an obstacle. The VP still has the problem that made them ask.',
+            'The right outcome delivered as an obstacle. The VP still has the problem that made them ask.',
         },
         {
           id: 'd',
-          text: 'Escalate to their CISO without telling the VP',
+          text: 'Escalate to their CISO without looping the VP in first',
           whyWrong:
-            'Going around someone is the fastest way to lose the champion you need.',
+            'Going around someone is the fastest way to lose the champion you need on the inside.',
         },
       ],
-      correctId: 'a',
+      correctId: 'b',
     },
   },
   {
@@ -1127,27 +1127,27 @@ export const DRILL_SEED: DrillItem[] = [
       choices: [
         {
           id: 'a',
-          text: '"No. On our test set it handles about four in five cases unaided. The design question is what we do with the fifth, and how you would know."',
-        },
-        {
-          id: 'b',
-          text: '"It is very accurate in our testing."',
+          text: '"It has been very accurate throughout our testing so far."',
           whyWrong:
             'Vague enough to be heard as yes. They will quote it back to you in a steering committee.',
         },
         {
-          id: 'c',
-          text: '"No system is 100% accurate."',
-          whyWrong: 'True, unhelpful, and slightly dismissive of a fair question.',
+          id: 'b',
+          text: '"No system of this kind is ever going to be 100% accurate."',
+          whyWrong: 'True, unhelpful, and slightly dismissive of an entirely fair question.',
         },
         {
-          id: 'd',
-          text: '"Let me explain how transformers work."',
+          id: 'c',
+          text: '"Let me explain how the underlying transformer model works."',
           whyWrong:
             'Answers a question nobody asked, and reads as avoidance to someone who needs a business answer.',
         },
+        {
+          id: 'd',
+          text: '"Four in five unaided. The question is the other fifth."',
+        },
       ],
-      correctId: 'a',
+      correctId: 'd',
     },
   },
 ];

@@ -184,7 +184,7 @@ export const DRILL_AWS: DrillItem[] = [
       stem: 'A pipeline role trusts a CI platform’s OIDC provider with a condition matching any subject. Why does this fail a security review?',
       choices: [
         { id: 'a', text: 'OIDC tokens issued by CI providers are unsigned and easily forged', whyWrong: 'They are signed, and AWS verifies the signature against the provider’s published keys. The weakness is the missing claim constraint, not the cryptography.' },
-        { id: 'b', text: 'Any account on that platform can mint a token the role accepts' },
+        { id: 'b', text: 'Any account on that CI platform can mint a token the role accepts' },
         { id: 'c', text: 'The audience claim cannot be validated for third-party providers', whyWrong: 'The audience is validated and can be conditioned on. Subject is the claim that identifies which repository is actually calling.' },
         { id: 'd', text: 'Federated OIDC sessions are issued with no expiry on the credentials', whyWrong: 'A federated session is time bounded like any assumed role. Credential lifetime is not what fails the review here.' },
       ],
@@ -205,7 +205,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'On-premises batch servers need to write to S3 nightly. The customer runs an internal certificate authority and refuses to hold static AWS keys. What fits?',
       choices: [
-        { id: 'a', text: 'One IAM user per server, each with a narrowly scoped write policy', whyWrong: 'That is the static-key model they rejected, multiplied by the fleet size and with a rotation problem on every host.' },
+        { id: 'a', text: 'One IAM user per server with a scoped write policy', whyWrong: 'That is the static-key model they rejected, multiplied by the fleet size and with a rotation problem on every host.' },
         { id: 'b', text: 'A proxy running in AWS that the servers call with a shared API key', whyWrong: 'You have invented a new credential to protect and a new component to keep available, and a shared secret is weaker than the certificates they already run.' },
         { id: 'c', text: 'IAM Roles Anywhere, with their internal CA as the trust anchor' },
         { id: 'd', text: 'An EC2 instance profile attached to each on-premises batch server', whyWrong: 'Instance profiles exist only for EC2. There is no metadata service on their own hardware to deliver credentials.' },
@@ -276,7 +276,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'SCP changes take up to a day to propagate to every member account', whyWrong: 'SCP changes take effect essentially immediately. Waiting produces no grant that was never written in the first place.' },
         { id: 'b', text: 'The policy must attach to each account directly rather than to the OU', whyWrong: 'An attachment at the OU is inherited by every account beneath it. The attachment point is not what is missing.' },
-        { id: 'c', text: 'SCPs stay inert until trusted access for IAM is enabled org-wide', whyWrong: 'All features must be enabled for SCPs to exist at all, but here the policy is attached and evaluating. The IAM grant is simply absent.' },
+        { id: 'c', text: 'SCPs stay inert until trusted access for IAM is on', whyWrong: 'All features must be enabled for SCPs to exist at all, but here the policy is attached and evaluating. The IAM grant is simply absent.' },
         { id: 'd', text: 'An SCP sets a ceiling only: IAM still has to grant the action' },
       ],
       correctId: 'd',
@@ -387,9 +387,9 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Explain to a customer’s network team the practical difference between a security group and a network ACL.',
       choices: [
-        { id: 'a', text: 'Security groups attach to subnets and NACLs attach to interfaces', whyWrong: 'It is the other way round. Security groups attach to elastic network interfaces and NACLs attach to subnets.' },
+        { id: 'a', text: 'Security groups attach to subnets, NACLs to interfaces', whyWrong: 'It is the other way round. Security groups attach to elastic network interfaces and NACLs attach to subnets.' },
         { id: 'b', text: 'NACLs are stateful and security groups are ordered stateless lists', whyWrong: 'Reversed on both counts, and this exact inversion produces the classic "outbound works, replies never arrive" bug.' },
-        { id: 'c', text: 'Security groups are stateful per interface; NACLs are stateless per subnet' },
+        { id: 'c', text: 'Security groups are stateful, NACLs stateless and per subnet' },
         { id: 'd', text: 'They are equivalent filters under different names, so pick either one', whyWrong: 'They sit at different layers and behave differently on return traffic. Treating them as interchangeable is how the surprises start.' },
       ],
       correctId: 'c',
@@ -431,7 +431,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'A data pipeline in private subnets pulls terabytes from S3 daily and the NAT gateway line item has become one of the largest on the bill. First move?',
       choices: [
-        { id: 'a', text: 'Add a gateway VPC endpoint for S3 so the traffic never reaches NAT' },
+        { id: 'a', text: 'Add a gateway VPC endpoint for S3 so traffic bypasses NAT' },
         { id: 'b', text: 'Add a second NAT gateway so the volume is spread across both', whyWrong: 'Data processing is billed per gigabyte no matter how many gateways you run, so this adds hourly cost and saves nothing.' },
         { id: 'c', text: 'Move the pipeline into public subnets with public IPs on the hosts', whyWrong: 'It removes the NAT charge by putting the compute directly on the internet, which no security review will accept for a data pipeline.' },
         { id: 'd', text: 'Compress the objects so fewer bytes cross the NAT gateway', whyWrong: 'Worth doing on its own merits, but it only shrinks the symptom while every byte still takes the expensive path.' },
@@ -478,7 +478,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Narrow the rule to the individual private IPs of the app instances', whyWrong: 'Private IPs change whenever an instance is replaced, so this buys a maintenance burden and an outage on the next scaling event.' },
         { id: 'b', text: 'Reference the app tier’s security group as the source instead' },
-        { id: 'c', text: 'Move the port 5432 rule onto the subnet NACL where it is coarser', whyWrong: 'NACLs are stateless and subnet-wide. Application-level access control belongs in security groups, not at the subnet edge.' },
+        { id: 'c', text: 'Move the port 5432 rule onto the subnet NACL', whyWrong: 'NACLs are stateless and subnet-wide. Application-level access control belongs in security groups, not at the subnet edge.' },
         { id: 'd', text: 'Nothing, since CIDR-based source rules are the recommended pattern', whyWrong: 'They work but they are brittle. Anything else placed in that CIDR, now or after the next subnet change, inherits database access.' },
       ],
       correctId: 'b',
@@ -524,7 +524,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'A VPC peering connection to each customer, with routes on both sides', whyWrong: 'Peering joins two whole networks, demands non-overlapping CIDRs and route edits on both sides, and grants a vendor far more reach than any customer wants to.' },
         { id: 'b', text: 'A site-to-site VPN tunnel terminated in each customer environment', whyWrong: 'Heavy to operate at any real customer count, and it still joins networks rather than exposing the one service they asked for.' },
-        { id: 'c', text: 'A public API endpoint locked down by a per-customer IP allowlist', whyWrong: 'Traffic still crosses the internet, which is the exact objection raised. Allowlists also break the day a customer changes egress addresses.' },
+        { id: 'c', text: 'A public API endpoint with a per-customer IP allowlist', whyWrong: 'Traffic still crosses the internet, which is the exact objection raised. Allowlists also break the day a customer changes egress addresses.' },
         { id: 'd', text: 'A PrivateLink endpoint service behind a network load balancer' },
       ],
       correctId: 'd',
@@ -588,7 +588,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Your PrivateLink-delivered service now needs to send webhook callbacks into the customer VPC. What is the honest answer?',
       choices: [
-        { id: 'a', text: 'Enable bidirectional mode on the endpoint service configuration', whyWrong: 'No such setting exists. Inventing a feature in front of a customer is how you lose the rest of the review.' },
+        { id: 'a', text: 'Enable bidirectional mode on the endpoint service', whyWrong: 'No such setting exists. Inventing a feature in front of a customer is how you lose the rest of the review.' },
         { id: 'b', text: 'Add a return route through the endpoint in the customer route table', whyWrong: 'The endpoint is not a router and exchanges no routes at all. That mental model comes from peering and does not transfer.' },
         { id: 'c', text: 'PrivateLink is one-way, so callbacks need a separate path back' },
         { id: 'd', text: 'Resolve the endpoint’s DNS name from your side to reach their network', whyWrong: 'That name resolves only inside the consumer VPC, and the provider has no reachability into that address space.' },
@@ -612,7 +612,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'VPC peering, using more specific routes to disambiguate the overlap', whyWrong: 'Peering rejects overlapping CIDRs outright at creation time. No amount of route specificity makes the connection come up.' },
         { id: 'b', text: 'Transit Gateway, whose route tables can hold overlapping prefixes', whyWrong: 'Transit Gateway is still IP routing. Two attachments advertising the same prefix leave the destination genuinely ambiguous.' },
-        { id: 'c', text: 'A site-to-site VPN, since the tunnel encapsulates the addressing', whyWrong: 'Encapsulation does not resolve the ambiguity at the far end. You end up in NAT gymnastics that nobody wants to own.' },
+        { id: 'c', text: 'A site-to-site VPN, since the tunnel encapsulates it', whyWrong: 'Encapsulation does not resolve the ambiguity at the far end. You end up in NAT gymnastics that nobody wants to own.' },
         { id: 'd', text: 'PrivateLink, since the endpoint takes a consumer VPC address' },
       ],
       correctId: 'd',
@@ -679,7 +679,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'A customer with twelve VPCs wants them all able to reach each other. Why do you steer them away from a peering mesh?',
       choices: [
-        { id: 'a', text: 'Peering is non-transitive: full reach needs sixty-six connections' },
+        { id: 'a', text: 'Peering is non-transitive: full reach needs sixty-six links' },
         { id: 'b', text: 'Peering connections cannot be made between two different accounts', whyWrong: 'Cross-account peering works fine and is common. The obstacle is the connection and route count, not the account boundary.' },
         { id: 'c', text: 'Peering charges a per-attachment hourly fee larger than the hub’s', whyWrong: 'Peering has no hourly attachment charge, and Transit Gateway does. Cost usually favors peering for a small number of VPCs.' },
         { id: 'd', text: 'Peered VPCs cannot reference each other’s security groups at all', whyWrong: 'Security group referencing across a peering connection is supported within a region. That is not the scaling problem.' },
@@ -723,7 +723,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'The customer wants Direct Connect for a pilot starting in three weeks. How do you handle it?',
       choices: [
-        { id: 'a', text: 'Delay the pilot start date until the Direct Connect circuit is live', whyWrong: 'You have traded a solvable connectivity constraint for months of lost momentum, which is usually what kills a pilot outright.' },
+        { id: 'a', text: 'Delay the pilot until the Direct Connect circuit is live', whyWrong: 'You have traded a solvable connectivity constraint for months of lost momentum, which is usually what kills a pilot outright.' },
         { id: 'b', text: 'Run the pilot on public endpoints and add private access afterwards', whyWrong: 'Retrofitting private connectivity once the security review has passed on a public design means running that review twice.' },
         { id: 'c', text: 'Start on site-to-site VPN and order the circuit in parallel' },
         { id: 'd', text: 'Commit to a Direct Connect delivery date inside the three-week window', whyWrong: 'Lead times belong to the carrier and the colocation facility. Promising a date you do not control is the classic overpromise.' },
@@ -812,7 +812,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Why does a well-built AWS landing zone put CloudTrail logs in a separate account rather than in each workload account?',
       choices: [
-        { id: 'a', text: 'So whoever controls a workload account cannot alter or delete its trail' },
+        { id: 'a', text: 'So whoever controls a workload account cannot delete its trail' },
         { id: 'b', text: 'Because CloudTrail is not permitted to write to a same-account bucket', whyWrong: 'It is permitted, and plenty of accounts do exactly that. Centralizing is a deliberate integrity decision, not a technical constraint.' },
         { id: 'c', text: 'To consolidate storage and earn a lower effective per-gigabyte rate', whyWrong: 'S3 is priced per gigabyte no matter which account owns the bucket, and volume tiers already aggregate under consolidated billing.' },
         { id: 'd', text: 'Because an organization trail cannot be queried across accounts', whyWrong: 'Central query convenience is a genuine benefit, but what auditors actually care about is that the record cannot be tampered with.' },
@@ -859,7 +859,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Enable the full preventive and detective control set across all thirty', whyWrong: 'Every deny lands on a live workload at the same moment, and you have no way to tell which control broke which application.' },
         { id: 'b', text: 'Enroll with detective controls first, then enforce per OU' },
-        { id: 'c', text: 'Create new governed accounts and migrate every workload across', whyWrong: 'Sometimes right for a handful of accounts, but as a blanket plan it is a multi-year migration when the customer wanted governance this quarter.' },
+        { id: 'c', text: 'Create new governed accounts and migrate the workloads', whyWrong: 'Sometimes right for a handful of accounts, but as a blanket plan it is a multi-year migration when the customer wanted governance this quarter.' },
         { id: 'd', text: 'Govern only newly vended accounts and leave the thirty as they are', whyWrong: 'That leaves the entire existing estate ungoverned, which is exactly the population the auditor is asking about.' },
       ],
       correctId: 'b',
@@ -884,7 +884,7 @@ export const DRILL_AWS: DrillItem[] = [
         { id: 'a', text: 'Raise the function timeout with a Service Quotas increase request', whyWrong: 'The maximum invocation duration is a hard platform limit rather than an adjustable quota. Support cannot move it for you.' },
         { id: 'b', text: 'Have the function re-invoke itself before the timeout to continue', whyWrong: 'Recursive continuation makes checkpointing, idempotency and failure handling your problem, which is the work Step Functions already does.' },
         { id: 'c', text: 'It exceeds the invocation limit: use Step Functions or ECS' },
-        { id: 'd', text: 'Allocate the maximum memory so the extra CPU finishes it in time', whyWrong: 'More memory buys more CPU and can help a compute-bound job, but you would be betting the job never grows past the ceiling again.' },
+        { id: 'd', text: 'Allocate maximum memory so the extra CPU finishes it', whyWrong: 'More memory buys more CPU and can help a compute-bound job, but you would be betting the job never grows past the ceiling again.' },
       ],
       correctId: 'c',
     },
@@ -925,7 +925,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'What actually justifies EKS over a simpler managed container service on AWS?',
       choices: [
-        { id: 'a', text: 'It depends on Kubernetes itself: operators, custom resources, device plugins' },
+        { id: 'a', text: 'It depends on Kubernetes itself: operators, CRDs, device plugins' },
         { id: 'b', text: 'The team has standardized on containers as their deployment artifact', whyWrong: 'Containers run perfectly well on the simpler managed service. Wanting containers is not on its own a reason to take on a control plane.' },
         { id: 'c', text: 'The workload has to scale out automatically under variable load', whyWrong: 'Every AWS container runtime autoscales, including the simpler managed one. Autoscaling does not differentiate them.' },
         { id: 'd', text: 'Kubernetes works out cheaper per unit of compute at large scale', whyWrong: 'Compute rates are broadly comparable, and on top you add cluster operations, an upgrade cadence and usually a platform engineer.' },
@@ -994,8 +994,8 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Node instance roles cannot be granted access to most AWS services', whyWrong: 'They can be granted almost anything, which is exactly why the shortcut is tempting and why over-permissioned node roles are so common.' },
         { id: 'b', text: 'It removes the need to run an OIDC provider on the cluster at all', whyWrong: 'IAM roles for service accounts depends on the cluster OIDC provider. That is the mechanism doing the work, not something avoided.' },
-        { id: 'c', text: 'Each workload gets its own identity, so permissions scope per pod' },
-        { id: 'd', text: 'It cuts the number of AssumeRole calls the cluster makes to STS', whyWrong: 'Per-pod credentials mean more STS activity, not less. What you buy is isolation and attribution, not a reduction in call volume.' },
+        { id: 'c', text: 'Each workload gets its own identity rather than the node’s' },
+        { id: 'd', text: 'It cuts the AssumeRole calls the cluster makes to STS', whyWrong: 'Per-pod credentials mean more STS activity, not less. What you buy is isolation and attribution, not a reduction in call volume.' },
       ],
       correctId: 'c',
     },
@@ -1083,7 +1083,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'A team plans a lifecycle rule moving a hundred million small log objects to an archive class after thirty days. What do you flag?',
       choices: [
-        { id: 'a', text: 'Transition requests and per-object overhead exceed the storage saved' },
+        { id: 'a', text: 'Transition requests and per-object overhead exceed the saving' },
         { id: 'b', text: 'Lifecycle rules cannot select objects below a minimum size threshold', whyWrong: 'The rule applies to objects of any size. What makes this plan bad is the economics, not a filtering restriction.' },
         { id: 'c', text: 'Objects in an archive class can no longer be listed from the bucket', whyWrong: 'Listing keeps working; it is retrieval that changes shape. That is not what makes this rule a mistake.' },
         { id: 'd', text: 'Thirty days is below the minimum age a transition rule can specify', whyWrong: 'Transitions at thirty days are entirely ordinary. Object size and object count are what make this plan uneconomic.' },
@@ -1173,7 +1173,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Enable S3 Block Public Access as an account-level setting' },
         { id: 'b', text: 'An AWS Config rule that reports publicly accessible buckets daily', whyWrong: 'Detective only. It tells you once the exposure already exists, which beats nothing but is not the same as preventing it.' },
-        { id: 'c', text: 'Remove s3:PutBucketPolicy from the roles developers use daily', whyWrong: 'It closes one path while leaving ACLs, presigned patterns and every role that legitimately manages bucket policies.' },
+        { id: 'c', text: 'Remove s3:PutBucketPolicy from every developer role', whyWrong: 'It closes one path while leaving ACLs, presigned patterns and every role that legitimately manages bucket policies.' },
         { id: 'd', text: 'Turn on default encryption with a customer managed key everywhere', whyWrong: 'Encryption at rest has nothing to say about whether an anonymous caller is authorized to read the object.' },
       ],
       correctId: 'a',
@@ -1218,7 +1218,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Provisioned capacity has not finished scaling up to meet the load', whyWrong: 'A scaling delay produces throttling that clears within minutes and tracks a traffic ramp, not steady throttling at low aggregate utilization.' },
         { id: 'b', text: 'A hot partition: one key value absorbs most of the traffic' },
-        { id: 'c', text: 'Items are large enough to consume several write units apiece', whyWrong: 'Large items consume more capacity units, which shows up as high consumed capacity. Here consumption is reported as low.' },
+        { id: 'c', text: 'Items are large enough to consume several write units', whyWrong: 'Large items consume more capacity units, which shows up as high consumed capacity. Here consumption is reported as low.' },
         { id: 'd', text: 'Strongly consistent reads are consuming double the read capacity', whyWrong: 'Read consistency affects read capacity units, and the symptom described is throttling on the write path.' },
       ],
       correctId: 'b',
@@ -1304,7 +1304,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Business users need to run ad-hoc filtered aggregations across an operational dataset that has no fixed query pattern. Which store do you steer toward?',
       choices: [
-        { id: 'a', text: 'A relational engine such as Aurora, where a planner handles the joins' },
+        { id: 'a', text: 'A relational engine such as Aurora, with a real query planner' },
         { id: 'b', text: 'DynamoDB with a global secondary index per anticipated query shape', whyWrong: 'Ad-hoc queries cannot be enumerated in advance, and every index you add carries write cost and its own capacity to manage.' },
         { id: 'c', text: 'DynamoDB with Scan plus a filter expression on each question', whyWrong: 'Scan reads the whole table and filters afterwards, burning capacity proportional to table size for every question anyone asks.' },
         { id: 'd', text: 'DynamoDB with a caching layer sitting in front of the table', whyWrong: 'A cache accelerates repeated identical queries. Ad-hoc analysis, where each question is new, is the case it helps least.' },
@@ -1350,8 +1350,8 @@ export const DRILL_AWS: DrillItem[] = [
       stem: 'After an Aurora failover the cluster is healthy in the console, but one application keeps throwing read-only errors on writes. Why?',
       choices: [
         { id: 'a', text: 'The application is pointed at the reader endpoint by configuration', whyWrong: 'Worth ruling out, but that would have been failing before the failover as well, rather than starting at the moment of promotion.' },
-        { id: 'b', text: 'The client cached the writer address past its TTL and never re-resolved' },
-        { id: 'c', text: 'Aurora holds the cluster read-only for a cooldown after failover', whyWrong: 'No such cooldown exists. The promoted instance accepts writes as soon as promotion completes.' },
+        { id: 'b', text: 'The client cached the writer endpoint address past its TTL' },
+        { id: 'c', text: 'Aurora holds the cluster read-only for a brief cooldown', whyWrong: 'No such cooldown exists. The promoted instance accepts writes as soon as promotion completes.' },
         { id: 'd', text: 'The connection pool needs resizing for the newly promoted instance', whyWrong: 'Pool size governs concurrency and queueing. It has no influence on whether the target it connects to will accept a write.' },
       ],
       correctId: 'b',
@@ -1437,7 +1437,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'A Lambda-based API exhausts Aurora connections during traffic spikes. What is the right structural fix?',
       choices: [
-        { id: 'a', text: 'Put RDS Proxy between the functions and the cluster to multiplex' },
+        { id: 'a', text: 'Put RDS Proxy between the functions and the Aurora cluster' },
         { id: 'b', text: 'Add a connection pool inside the function handler and reuse it', whyWrong: 'Each execution environment keeps its own pool, so a thousand concurrent environments still open a thousand or more connections.' },
         { id: 'c', text: 'Increase the instance size to raise the maximum connection limit', whyWrong: 'That buys headroom proportional to instance size while connections scale with concurrency. You are outrunning the problem, not fixing it.' },
         { id: 'd', text: 'Lower the reserved concurrency ceiling on the Lambda function', whyWrong: 'That protects the database by throttling the API, converting a database capacity problem into user-visible request rejections.' },
@@ -1485,7 +1485,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Rewrite the queries so they select fewer rows and fewer columns', whyWrong: 'On an unpartitioned text layout the filters are applied after the data has been read, so bytes scanned barely moves.' },
         { id: 'b', text: 'Move the dataset to a colder and cheaper S3 storage class', whyWrong: 'Storage class changes storage cost and can add retrieval charges. Athena still bills on bytes scanned either way.' },
-        { id: 'c', text: 'Convert to compressed columnar files partitioned on the filter column' },
+        { id: 'c', text: 'Convert to compressed columnar files and partition the data' },
         { id: 'd', text: 'Raise the per-query data scanned limit on the Athena workgroup', whyWrong: 'Workgroup limits cap runaway spend by killing queries. Raising one makes a query read more data, not less.' },
       ],
       correctId: 'c',
@@ -1508,7 +1508,7 @@ export const DRILL_AWS: DrillItem[] = [
         { id: 'a', text: 'A dataset in S3 measured in hundreds of terabytes and still growing', whyWrong: 'Volume alone does not decide it. Query-in-place handles very large datasets; how often and how concurrently they are queried is the real question.' },
         { id: 'b', text: 'A handful of analysts running exploratory queries a few times a week', whyWrong: 'That is precisely the profile where paying for a warehouse to sit idle most of the week is hardest to justify.' },
         { id: 'c', text: 'Data arriving as deeply nested semi-structured JSON documents', whyWrong: 'Both engines read semi-structured data. Source format is a modeling concern rather than the factor that picks the engine.' },
-        { id: 'd', text: 'Many concurrent users hitting the same dashboards all day' },
+        { id: 'd', text: 'Many concurrent business users hitting the same dashboards all day' },
       ],
       correctId: 'd',
     },
@@ -1619,7 +1619,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'A single SQS queue that all four consumer groups read from', whyWrong: 'The consumers would compete for messages, so each event is handled once rather than by all four, and deleted messages cannot be replayed.' },
         { id: 'b', text: 'An SNS topic with one subscription per consuming team', whyWrong: 'Fan-out works, but SNS pushes and forgets. A subscriber added later receives nothing that was published before it subscribed.' },
-        { id: 'c', text: 'A Kinesis data stream, where each consumer holds its own position' },
+        { id: 'c', text: 'A Kinesis data stream, with a read position per consumer' },
         { id: 'd', text: 'Four separate SQS queues the producer writes each event to', whyWrong: 'The producer is now coupled to the consumer list, and there is still no retained history for the fourth team to reprocess.' },
       ],
       correctId: 'c',
@@ -1954,7 +1954,7 @@ export const DRILL_AWS: DrillItem[] = [
       stem: 'A customer expects steady compute spend but keeps changing instance families as they tune workloads. Which commitment fits?',
       choices: [
         { id: 'a', text: 'Standard Reserved Instances bought for the family they run today', whyWrong: 'Standard RIs lock to the attributes this customer keeps changing, so the discount stops applying to whatever they actually run next.' },
-        { id: 'b', text: 'A Compute Savings Plan on their expected hourly spend' },
+        { id: 'b', text: 'A Compute Savings Plan matching their expected hourly spend' },
         { id: 'c', text: 'An EC2 Instance Savings Plan on the current family and region', whyWrong: 'A deeper discount, but it commits to one family in one region, which is exactly the flexibility they said they need to keep.' },
         { id: 'd', text: 'On-demand pricing paired with a monthly budget alert threshold', whyWrong: 'A budget alert manages surprise rather than cost. Steady, predictable spend is the case where a commitment pays for itself.' },
       ],
@@ -1977,7 +1977,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'Savings Plans reserve capacity only for the committed instance family', whyWrong: 'They reserve no capacity at all, for any family. There is no partial guarantee hiding in the commitment to lean on.' },
         { id: 'b', text: 'Capacity is assured once the plan covers more than their peak spend', whyWrong: 'Coverage level describes how much of the bill gets the discounted rate. It has no relationship to instance availability.' },
-        { id: 'c', text: 'The plan discounts the rate; capacity needs a reservation' },
+        { id: 'c', text: 'The plan discounts the rate; capacity needs its own reservation' },
         { id: 'd', text: 'Converting the plan to Reserved Instances would supply the guarantee', whyWrong: 'Only zonal RIs carry a capacity reservation and regional ones do not, so the advice is wrong as stated and points away from the right instrument.' },
       ],
       correctId: 'c',
@@ -2000,7 +2000,7 @@ export const DRILL_AWS: DrillItem[] = [
         { id: 'a', text: 'Cost Explorer groups only by AWS-generated tags, not user-defined ones', whyWrong: 'User-defined tags are fully supported once they have been activated. The activation step is the gap, not the kind of tag.' },
         { id: 'b', text: 'Tags have to be applied at resource creation to reach the billing data', whyWrong: 'Tags added later do appear for usage from that point onward. The blocker is activation, not when the tag was attached.' },
         { id: 'c', text: 'They need to enable Cost and Usage Reports before grouping by tag', whyWrong: 'A detailed usage report is useful for other reasons, but Cost Explorer groups by an activated tag without one.' },
-        { id: 'd', text: 'The key was never activated as a cost allocation tag' },
+        { id: 'd', text: 'The key was never activated as a cost allocation tag in billing' },
       ],
       correctId: 'd',
     },
@@ -2180,7 +2180,7 @@ export const DRILL_AWS: DrillItem[] = [
         { id: 'a', text: 'Throttle the backfill in the application and run it overnight', whyWrong: 'Better than nothing, but you are hand-building a scheduler and still buying interactive-path capacity for work with no latency requirement.' },
         { id: 'b', text: 'Buy additional provisioned throughput sized to cover both workloads', whyWrong: 'You would be provisioning peak capacity for a job that does not care when it finishes, which is the most expensive way to fix this.' },
         { id: 'c', text: 'Switch the backfill to a smaller and cheaper foundation model', whyWrong: 'Reasonable for cost and worth testing for quality, but the two workloads still share the same throughput and the contention remains.' },
-        { id: 'd', text: 'Run the archive as a Bedrock batch inference job over S3' },
+        { id: 'd', text: 'Run the archive as a Bedrock batch inference job reading from S3' },
       ],
       correctId: 'd',
     },
@@ -2201,7 +2201,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'A Bedrock agent keeps calling the wrong action for a common user request. Where do you look first?',
       choices: [
-        { id: 'a', text: 'The action group schema, since names and descriptions drive selection' },
+        { id: 'a', text: 'The action group schema, whose descriptions drive selection' },
         { id: 'b', text: 'The temperature setting on the agent’s orchestration model', whyWrong: 'Temperature adds variance around a choice the model is already making badly. It cannot teach the model which action is which.' },
         { id: 'c', text: 'The execution role on the Lambda function behind the action', whyWrong: 'Permissions decide whether a call succeeds once it has been made. They play no part in which action gets chosen.' },
         { id: 'd', text: 'The idle session timeout configured on the agent alias', whyWrong: 'Session length governs how much conversation history is retained, not the mapping between a user intent and an action.' },
@@ -2407,7 +2407,7 @@ export const DRILL_AWS: DrillItem[] = [
       choices: [
         { id: 'a', text: 'It runs on a larger model that is correspondingly harder to fool', whyWrong: 'The strength comes from being a separate enforcement layer with a configured policy, not from the size of any model behind it.' },
         { id: 'b', text: 'It is applied before the system prompt is assembled and sent', whyWrong: 'Ordering within prompt assembly is beside the point. Anything that lives inside the prompt is subject to the same manipulation.' },
-        { id: 'c', text: 'It is enforced outside the model, so no prompt can talk it out of it' },
+        { id: 'c', text: 'It is enforced outside the model, not inside the prompt' },
         { id: 'd', text: 'System prompts are visible to end users, and guardrail rules are not', whyWrong: 'Prompt secrecy is not a control. A perfectly hidden instruction is still only an instruction to a model that can be persuaded.' },
       ],
       correctId: 'c',
@@ -2430,7 +2430,7 @@ export const DRILL_AWS: DrillItem[] = [
         { id: 'a', text: 'Attach the guardrail directly to the self-hosted model endpoint', whyWrong: 'A guardrail is not attached to arbitrary endpoints. It is invoked as a call, which is exactly what the standalone API exists for.' },
         { id: 'b', text: 'Route the self-hosted model’s traffic through Bedrock as a proxy', whyWrong: 'Bedrock serves the models it offers. It is not a pass-through proxy in front of somebody else’s model deployment.' },
         { id: 'c', text: 'Re-implement the same filters inside the self-hosting team’s app', whyWrong: 'Two implementations drift apart, and the auditor will ask which is authoritative. That is the situation one policy exists to prevent.' },
-        { id: 'd', text: 'The ApplyGuardrail API, which evaluates text on its own' },
+        { id: 'd', text: 'The ApplyGuardrail API, which evaluates text with no model call' },
       ],
       correctId: 'd',
     },
@@ -2560,7 +2560,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Retrieval quality is fine overall but terrible when scoped to one small department. What is the mechanism to suspect?',
       choices: [
-        { id: 'a', text: 'The filter runs after approximate search and empties the candidates' },
+        { id: 'a', text: 'The metadata filter is applied after the approximate search' },
         { id: 'b', text: 'That department’s documents were never embedded and indexed', whyWrong: 'That produces no results at all rather than poor ones, and it would show up immediately as a document count discrepancy.' },
         { id: 'c', text: 'The department writes in jargon the embedding model never saw', whyWrong: 'Plausible for very specialized vocabulary, but it would degrade results gradually rather than producing this sharp filter-scoped cliff.' },
         { id: 'd', text: 'The index has too many segments and needs a force merge', whyWrong: 'Segment merging affects query latency and storage efficiency. It does not change which candidates survive a metadata filter.' },
@@ -2672,7 +2672,7 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Inference requests arrive in bursts twice a day, each payload is large, and a few minutes of latency is acceptable. What serving mode fits?',
       choices: [
-        { id: 'a', text: 'Asynchronous inference, which queues and scales to zero between bursts' },
+        { id: 'a', text: 'Asynchronous inference, which queues work and scales to zero' },
         { id: 'b', text: 'A real-time endpoint provisioned to handle the full burst rate', whyWrong: 'You would pay peak capacity around the clock for a workload that is idle most of the day and has no real-time latency requirement.' },
         { id: 'c', text: 'A real-time endpoint with aggressive autoscaling policies set', whyWrong: 'Autoscaling reacts after load arrives and generally will not reach zero, so you pay a floor and still queue at the head of the burst.' },
         { id: 'd', text: 'A scheduled batch transform job run twice a day over the inputs', whyWrong: 'Reasonable when the inputs are all known in advance, but it does not handle request-driven arrival where callers expect a per-request result.' },
@@ -2695,7 +2695,7 @@ export const DRILL_AWS: DrillItem[] = [
       stem: 'A customer wants to fine-tune rather than use a general model with good retrieval. What do you make sure is on the table?',
       choices: [
         { id: 'a', text: 'That fine-tuning reliably beats retrieval on factual accuracy', whyWrong: 'Untrue as a general claim. Fine-tuning teaches form and behavior well, and it is a poor mechanism for injecting facts that keep changing.' },
-        { id: 'b', text: 'The standing cost: data upkeep, evals, serving, and base model churn' },
+        { id: 'b', text: 'The standing cost: data upkeep, evals, serving, model churn' },
         { id: 'c', text: 'That the training run itself is the main expense to budget for', whyWrong: 'The training job is usually the smallest line of the four. Framing it that way sets the customer up for a bad surprise in month three.' },
         { id: 'd', text: 'That a fine-tuned model cannot be paired with a guardrail policy', whyWrong: 'Guardrails apply independently of how the model was produced, so this is simply false and would misdirect the decision.' },
       ],
@@ -2785,10 +2785,10 @@ export const DRILL_AWS: DrillItem[] = [
       kind: 'mcq',
       stem: 'Where does prompt content most often escape the intended boundary in a real deployment?',
       choices: [
-        { id: 'a', text: 'The customer’s own logging and observability path, which frequently captures full prompts and ships them somewhere less controlled' },
-        { id: 'b', text: 'The model provider retaining prompts contrary to the agreement', whyWrong: 'A contractual matter that is documented and auditable. It is not where the practical leaks come from.' },
-        { id: 'c', text: 'Network interception between the application and the service', whyWrong: 'Transport is encrypted end to end. This is rarely the realistic path.' },
-        { id: 'd', text: 'Other tenants of the shared service seeing the prompts', whyWrong: 'Tenant isolation is a core property of the platform. Raising it distracts from the exposure that is actually likely.' },
+        { id: 'a', text: 'Their own logging path, which captures and forwards prompts' },
+        { id: 'b', text: 'The model provider retaining prompts contrary to the agreement', whyWrong: 'A contractual matter that is documented and auditable, and not where the practical leaks in a real deployment come from.' },
+        { id: 'c', text: 'Network interception between the application and the service', whyWrong: 'Transport is encrypted end to end and mutually authenticated. This is rarely the realistic exposure path.' },
+        { id: 'd', text: 'Other tenants of the shared service reading each other’s prompts', whyWrong: 'Tenant isolation is a core property of the platform. Raising it distracts from the exposure that is genuinely likely.' },
       ],
       correctId: 'a',
     },
