@@ -107,38 +107,46 @@ export function sequentialStep(fraction: number, scheme: SchemeName): string {
  * gradient stops behind content, never as body text, so the loudness lands on
  * shapes rather than on anything anyone has to read.
  */
+/**
+ * Near-monochrome.
+ *
+ * The previous palette put hot pink, canary and cyan on screen at once and it
+ * was loud and cheap. Restraint is what actually reads as modern: a greyscale
+ * ramp does the structural work, and exactly one accent exists so that when
+ * something is coloured it means something.
+ *
+ * Hierarchy comes from weight, size and space, never from hue.
+ */
 const light = {
   scheme: 'light' as 'light' | 'dark',
-  /** Warm canvas. Almost a cream: paper, not a screenshot. */
-  bg: '#F6F2EA',
-  surface: '#FFFDF9',
-  elevated: '#EFE9DE',
-  elevatedActive: '#E4DCCD',
-  border: '#E2DACB',
-  borderStrong: '#C9BFAC',
-  text: '#141317',
-  textMuted: '#57545E',
-  textFaint: '#8A8590',
-  /** Hot pink. The lead accent. */
-  accent: '#E8336D',
+  bg: '#FCFCFC',
+  surface: '#FFFFFF',
+  elevated: '#F4F4F5',
+  elevatedActive: '#E9E9EC',
+  border: '#E7E7E9',
+  borderStrong: '#D1D1D6',
+  text: '#0F0F11',
+  textMuted: '#61616B',
+  textFaint: '#9A9AA3',
+  /** Ink, not a brand colour. Used for the one primary action per screen. */
+  accent: '#18181B',
   accentText: '#FFFFFF',
-  accentSoft: '#FCE4EC',
-  /** Cyan. The other end of every gradient. */
-  accentAlt: '#00B8C4',
-  /** Canary. Reward, highlight, the brush stroke on a finished quest. */
-  accentWarm: '#F5C518',
-  positive: '#1B7A4B',
-  positiveSoft: '#E2F2E8',
-  negative: '#C42B32',
-  negativeSoft: '#FBE7E7',
-  warning: '#8A5A0B',
-  warningSoft: '#FAEFD8',
-  flameDeep: '#D2361B',
-  flameMid: '#F58A1F',
-  flameCore: '#FFC93F',
-  scrim: 'rgba(16,15,18,0.42)',
-  shadow: 'rgba(50,40,26,0.10)',
-  shadowStrong: 'rgba(50,40,26,0.18)',
+  accentSoft: '#F1F1F3',
+  /** The single point of colour in the product. Used sparingly. */
+  accentAlt: '#2D6BE0',
+  accentWarm: '#B45309',
+  positive: '#15803D',
+  positiveSoft: '#EDF7F0',
+  negative: '#B42318',
+  negativeSoft: '#FDF0EF',
+  warning: '#B45309',
+  warningSoft: '#FBF4E9',
+  flameDeep: '#C2410C',
+  flameMid: '#EA580C',
+  flameCore: '#F59E0B',
+  scrim: 'rgba(15,15,17,0.40)',
+  shadow: 'rgba(15,15,17,0.06)',
+  shadowStrong: 'rgba(15,15,17,0.12)',
 };
 
 export type Palette = typeof light;
@@ -158,34 +166,35 @@ export type Palette = typeof light;
  * up in lightness and down in saturation. Surfaces step tonally so elevation
  * survives without borders doing all the work.
  */
+/** Dark: the same restraint, inverted through tonal steps rather than flipped. */
 const dark: Palette = {
   scheme: 'dark',
-  bg: '#0E0D12',
-  surface: '#17161D',
-  elevated: '#201E28',
-  elevatedActive: '#2A2833',
-  border: '#2B2934',
-  borderStrong: '#413E4C',
-  text: '#EDEAF0',
-  textMuted: '#A6A1B0',
-  textFaint: '#75707F',
-  accent: '#FF5C8A',
-  accentText: '#121116',
-  accentSoft: '#2C1522',
-  accentAlt: '#2DD4DF',
-  accentWarm: '#FFD644',
-  positive: '#4FC98D',
-  positiveSoft: '#122318',
-  negative: '#F2787E',
-  negativeSoft: '#2A1518',
-  warning: '#E5AC4B',
-  warningSoft: '#2A2113',
-  flameDeep: '#E04A22',
-  flameMid: '#FF9A2E',
-  flameCore: '#FFD457',
-  scrim: 'rgba(0,0,0,0.66)',
-  shadow: 'rgba(0,0,0,0.38)',
-  shadowStrong: 'rgba(0,0,0,0.54)',
+  bg: '#0A0A0B',
+  surface: '#131315',
+  elevated: '#1B1B1E',
+  elevatedActive: '#252529',
+  border: '#232326',
+  borderStrong: '#37373C',
+  text: '#F4F4F5',
+  textMuted: '#A1A1AA',
+  textFaint: '#71717A',
+  accent: '#FAFAFA',
+  accentText: '#0A0A0B',
+  accentSoft: '#1D1D20',
+  accentAlt: '#6098FF',
+  accentWarm: '#D97706',
+  positive: '#4ADE80',
+  positiveSoft: '#112016',
+  negative: '#F87171',
+  negativeSoft: '#231416',
+  warning: '#FBBF24',
+  warningSoft: '#231C10',
+  flameDeep: '#EA580C',
+  flameMid: '#F97316',
+  flameCore: '#FBBF24',
+  scrim: 'rgba(0,0,0,0.68)',
+  shadow: 'rgba(0,0,0,0.40)',
+  shadowStrong: 'rgba(0,0,0,0.60)',
 };
 
 export const PALETTES = { light, dark };

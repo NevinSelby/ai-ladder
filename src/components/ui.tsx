@@ -211,37 +211,77 @@ export function Appear({
 
 interface CardProps extends ViewProps {
   children: ReactNode;
-  /** Tints the card and draws a soft left marker. */
+  /** Draws a thin left rule in this colour. Does not tint the whole block. */
   accent?: string;
   padded?: boolean;
-  /** 0 flat, 1 resting, 2 lifted. */
+  /**
+   * How much container this block gets.
+   *
+   * `bare` is the default and draws nothing: the block is defined by the space
+   * around it and the type inside it. `panel` adds a quiet fill for something
+   * genuinely inset, such as a form. `raised` is the old card and exists for
+   * the one hero block per screen.
+   */
+  surface?: 'bare' | 'panel' | 'raised';
+  /** Deprecated alias for `surface`, kept so existing call sites still build. */
   level?: 0 | 1 | 2;
 }
 
-export function Card({ children, accent, padded = true, level = 1, style, ...rest }: CardProps) {
+/**
+ * A content block.
+ *
+ * This used to draw a bordered, rounded, shadowed rectangle every time, so a
+ * headline stat and a settings row looked identical and the app read as a
+ * stack of boxes. A box is the loudest thing a layout can do; using one for
+ * everything is precisely why nothing had hierarchy.
+ *
+ * It now draws nothing by default. Separation comes from whitespace and from
+ * the fading rules in surface.tsx. A container is opt-in, for the rare block
+ * that genuinely needs to look inset or lifted.
+ */
+export function Card({
+  children,
+  accent,
+  padded = true,
+  surface,
+  level,
+  style,
+  ...rest
+}: CardProps) {
   const theme = useTheme();
-  return (
-    <View
-      {...rest}
-      style={[
-        {
+  // Old numeric levels map onto the new vocabulary, so call sites did not have
+  // to change: only an explicit level 2 still asks to be lifted.
+  const mode: 'bare' | 'panel' | 'raised' = surface ?? (level === 2 ? 'raised' : 'bare');
+
+  const container =
+    mode === 'raised'
+      ? {
           backgroundColor: theme.surface,
           borderRadius: radius.lg,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: theme.border,
-          overflow: 'hidden',
-        },
-        elevation(theme, level),
-        style,
-      ]}>
+          overflow: 'hidden' as const,
+          ...elevation(theme, 1),
+        }
+      : mode === 'panel'
+        ? {
+            backgroundColor: theme.elevated,
+            borderRadius: radius.md,
+            overflow: 'hidden' as const,
+          }
+        : {};
+
+  return (
+    <View {...rest} style={[container, style]}>
       {accent ? (
         <View
           style={{
             position: 'absolute',
             left: 0,
-            top: 0,
-            bottom: 0,
-            width: 3,
+            top: 2,
+            bottom: 2,
+            width: 2,
+            borderRadius: 1,
             backgroundColor: accent,
           }}
         />
@@ -249,7 +289,10 @@ export function Card({ children, accent, padded = true, level = 1, style, ...res
       <View
         style={
           padded
-            ? { padding: space.lg, paddingLeft: accent ? space.lg + 3 : space.lg }
+            ? {
+                paddingVertical: mode === 'bare' ? 0 : space.lg,
+                paddingHorizontal: mode === 'bare' ? (accent ? space.lg : 0) : space.lg,
+              }
             : undefined
         }>
         {children}
